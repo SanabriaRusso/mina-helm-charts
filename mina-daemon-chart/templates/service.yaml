@@ -1,0 +1,69 @@
+{{- if .Values.service.enable }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mina-standard-daemon.fullname" . }}
+  annotations:
+    {{- with .Values.service.annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  labels:
+    {{- include "mina-standard-daemon.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: {{ .Values.service.targetPort }}
+      protocol: {{ .Values.service.protocol }}
+      name: {{ .Values.service.name }}
+    {{- with .Values.service.extraPorts -}}
+    {{- range . }}
+    - port: {{ .port | default 80 }}
+      targetPort: {{ .targetPort | default "http" }}
+      protocol: {{ .protocol | default "TCP" }}
+      name: {{ .name | default "extra-http" }}
+    {{- end }}
+    {{- end }}
+  selector:
+    {{- include "mina-standard-daemon.selectorLabels" . | nindent 4 }}
+{{- end }}
+---
+{{- if .Values.extraServices }}
+{{- $rootContext := . -}}
+{{- range .Values.extraServices }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "mina-standard-daemon.fullname" $rootContext }}-{{ .name }}
+  annotations:
+    {{- with .annotations }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+  labels:
+    {{- include "mina-standard-daemon.labels" $rootContext | nindent 4 }}
+    {{- with .labels }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+spec:
+  type: {{ .type | default "ClusterIP" }}
+  ports:
+    {{- range .ports }}
+    - port: {{ .port }}
+      targetPort: {{ .targetPort }}
+      protocol: {{ .protocol | default "TCP" }}
+      name: {{ .name }}
+      {{- if hasKey . "nodePort" }}
+      nodePort: {{ .nodePort }}
+      {{- end }}
+    {{- end }}
+  selector:
+    {{- if and (hasKey . "skipSelectorLabels") (eq (.skipSelectorLabels | toString) "true") }}
+    {{- else }}
+    {{- include "mina-standard-daemon.selectorLabels" $rootContext | nindent 4 }}
+    {{- end }}
+    {{- with .selector }}
+    {{- toYaml . | nindent 4 }}
+    {{- end }}
+---
+{{- end }}
+{{- end }}

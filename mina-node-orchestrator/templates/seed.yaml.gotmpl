@@ -1,0 +1,48 @@
+{{/*
+ Override default values for mina-standard-daemon here
+*/}}
+daemon:
+  args:
+  {{- $args := .node.values.daemon.args }}
+  {{- if ne (len $args) 0 }}
+  {{- range $args }}
+  - {{ . }}
+  {{- end }}
+  {{- else }}
+    - daemon
+    - -log-level
+    - Debug
+    - -log-json
+    - -config-directory
+    - /root/.mina-config
+    - -log-snark-work-gossip
+    - "true"
+    - -client-port
+    - $(DAEMON_CLIENT_PORT)
+    - -rest-port
+    - $(DAEMON_REST_PORT)
+    - -external-port
+    - $(DAEMON_EXTERNAL_PORT)
+    - -metrics-port
+    - $(DAEMON_METRICS_PORT)
+    - -enable-peer-exchange
+    - "true"
+    - -libp2p-keypair
+    - /root/libp2p-keys/key
+    - --max-connections
+    - "200"
+    - -generate-genesis-proof
+    - "true"
+    - -log-precomputed-blocks
+    - "true"
+    - -seed
+    {{- $peerList := .root.Values.common.daemon.peerListUrl }}
+    {{- $nodePeerList := .node.values.daemon.peerListUrl }}
+    {{- if ne $nodePeerList "" }}
+    {{- $peerList = $nodePeerList }}
+    {{- end }}
+    {{- if ne $peerList "" }}
+    - -peer-list-url
+    - {{ $peerList }}
+    {{- end }}
+  {{- end }}

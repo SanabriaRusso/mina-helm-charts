@@ -1,0 +1,169 @@
+{{/*
+ Override default values for mina-standard-daemon here
+*/}}
+fullnameOverride: {{ required "Node name is required" .node.name }}
+strategy:
+  type: Recreate
+podAnnotations: {}
+podLabels:
+  role: {{ required "Node role is required" .node.role }}
+
+ingress:
+{{- toYaml .node.values.ingress | nindent 2 }}
+
+{{- $extraIngress := .node.values.extraIngress }}
+{{- if ne (len $extraIngress) 0 }}
+extraIngress:
+{{- toYaml $extraIngress | nindent 2 }}
+{{- end }}
+
+secrets:
+{{- include "mina-standard-node.plain.secrets" . | indent 2 }}
+
+service:
+{{- include "mina-standard-node.plain.service" . | indent 2 }}
+
+{{- $extraServices := .node.values.extraServices }}
+{{- if ne (len $extraServices) 0 }}
+extraServices:
+{{- toYaml $extraServices | nindent 2 }}
+{{- end }}
+
+initContainers:
+{{ include "mina-standard-node.plain.initContainers" . | indent 2 }}
+
+{{- $extraInitContainers := .node.values.extraInitContainers }}
+{{- if ne (len $extraInitContainers) 0 }}
+extraInitContainers:
+{{- toYaml $extraInitContainers | nindent 2 }}
+{{- end }}
+
+daemon:
+  name: {{ required "Node name is required" .node.name }}
+  network: {{ include "mina-standard-node.plain.network" . }}
+  role: {{ required "Node role is required" .node.role }}
+  image:
+  {{ include "mina-standard-node.plain.image" . | indent 4 }}
+  {{- $command := .node.values.daemon.command }}
+  {{- if ne (len $command) 0 }}
+  command:
+  {{- toYaml $command | nindent 4 }}
+  {{- end }}
+  args:
+  {{- $args := .node.values.daemon.args }}
+  {{- if ne (len $args) 0 }}
+  {{- range $args }}
+  - {{ . | quote }}
+  {{- end }}
+  {{- else }}
+    - daemon
+    - -log-level
+    - Debug
+    - -log-json
+    - -config-directory
+    - /root/.mina-config
+    - -log-snark-work-gossip
+    - "true"
+    - -client-port
+    - $(DAEMON_CLIENT_PORT)
+    - -rest-port
+    - $(DAEMON_REST_PORT)
+    - -external-port
+    - $(DAEMON_EXTERNAL_PORT)
+    - -metrics-port
+    - $(DAEMON_METRICS_PORT)
+    - -enable-peer-exchange
+    - "true"
+    - -libp2p-keypair
+    - /root/libp2p-keys/key
+    - --max-connections
+    - "200"
+    {{- $peerList := .root.Values.common.daemon.peerListUrl }}
+    {{- $nodePeerList := .node.values.daemon.peerListUrl }}
+    {{- if ne $nodePeerList "" }}
+    {{- $peerList = $nodePeerList }}
+    {{- end }}
+    {{- if ne $peerList "" }}
+    - -peer-list-url
+    - {{ $peerList }}
+    {{- end }}
+    - -generate-genesis-proof
+    - "true"
+    - -log-precomputed-blocks
+    - "true"
+  {{- end }}
+  extraArgs:
+  {{- include "mina-standard-node.plain.extraArgs" . | nindent 4 }}
+  env:
+  {{ include "mina-standard-node.plain.env" . | indent 4 }}
+  ports:
+  {{ include "mina-standard-node.plain.ports" . | indent 4 }}
+  resources:
+  {{- toYaml .node.values.daemon.resources | nindent 4 }}
+  livenessProbe:
+  {{- $livenessProbe := .node.values.daemon.livenessProbe }}
+  {{- if ne (len $livenessProbe) 0 }}
+    {{- toYaml $livenessProbe | nindent 4 }}
+  {{- else }}
+    failureThreshold: 10
+    initialDelaySeconds: 300
+    periodSeconds: 60
+    successThreshold: 1
+    terminationGracePeriodSeconds: 10
+    tcpSocket:
+      port: external-port
+    timeoutSeconds: 5
+  {{- end }}
+  readinessProbe:
+  {{- $readinessProbe := .node.values.daemon.readinessProbe }}
+  {{- if ne (len $readinessProbe) 0 }}
+    {{- toYaml $readinessProbe | nindent 4 }}
+  {{- else }}
+    failureThreshold: 10
+    initialDelaySeconds: {{ (eq .node.role "archive") | ternary 10 300 }} {{/* Archive nodes have a shorter initial delay */}}
+    periodSeconds: {{ (eq .node.role "archive") | ternary 10 60 }} {{/* Archive nodes have a shorter check periods */}}
+    successThreshold: 1
+    timeoutSeconds: 5
+    exec:
+      command:
+      - /bin/bash
+      - -c
+      {{- if ne .node.role "archive" }}
+      - 'source /healthcheck/utilities.sh && updateSyncStatusLabel {{ required "Node name is required" .node.name }} && isDaemonSynced'
+      {{- else }}
+      - echo "Archive node does not have a readiness probe"
+      {{- end }}
+  {{- end }}
+  volumeMounts:
+  {{- include "mina-standard-node.plain.volumeMounts" . | nindent 4 }}
+  {{- $extraVolumeMounts := .node.values.daemon.extraVolumeMounts }}
+  {{- if ne (len $extraVolumeMounts) 0 }}
+  extraVolumeMounts:
+  {{- toYaml $extraVolumeMounts | nindent 4 }}
+  {{- end }}
+
+  {{- $extraContainers := .node.values.daemon.extraContainers }}
+  {{- if ne (len $extraContainers) 0 }}
+  extraContainers:
+  {{- range $extraContainers }}
+    {{- toYaml (. | list) | nindent 4 }}
+  {{- end -}}
+  {{- end }}
+
+volumes:
+{{ include "mina-standard-node.plain.volumes" . | indent 2 }}
+
+{{- $extraVolumes := .node.values.extraVolumes }}
+{{- if ne (len $extraVolumes) 0 }}
+extraVolumes:
+{{- toYaml $extraVolumes | nindent 2 }}
+{{- end }}
+
+persistentVolumeClaim:
+{{ include "mina-standard-node.plain.persistentVolumeClaim" . | indent 2 }}
+
+tolerations:
+{{ include "mina-standard-node.plain.tolerations" . | indent 2 }}
+
+affinity:
+{{ include "mina-standard-node.plain.affinity" . | indent 2 }}

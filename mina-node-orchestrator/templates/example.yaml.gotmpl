@@ -1,0 +1,10 @@
+fullnameOverride: example-extra-template
+daemon:
+  name: example-extra-template
+  readinessProbe:
+    exec:
+      command:
+      - /bin/bash
+      - -c
+      - 'source /healthcheck/utilities.sh && isDaemonSynced && updateSyncStatusLabel
+        example-extra-template'

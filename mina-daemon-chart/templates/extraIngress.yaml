@@ -1,0 +1,62 @@
+{{- $root := . }}
+{{- range $index, $extraIngress := .Values.extraIngress }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  {{- if hasKey $extraIngress "name" }}
+  name: {{ $extraIngress.name }}
+  {{- else }}
+  name: {{ include "mina-standard-daemon.fullname" $root }}-{{ $index }}
+  {{- end }}
+  labels:
+    {{- include "mina-standard-daemon.labels" $root | nindent 4 }}
+  {{- with $extraIngress.annotations }}
+  annotations:
+    {{- toYaml . | nindent 4 }}
+  {{- end }}
+spec:
+  {{- if hasKey $extraIngress "ingressClassName" }}
+  ingressClassName: {{ $extraIngress.ingressClassName }}
+  {{- else }}
+  ingressClassName: nginx
+  {{- end }}
+  {{- if hasKey $extraIngress "tls" }}
+  tls:
+    {{- range $extraIngress.tls }}
+    - hosts:
+        {{- range .hosts }}
+        - {{ . | quote }}
+        {{- end }}
+      secretName: {{ .secretName }}
+    {{- end }}
+  {{- end }}
+  rules:
+    {{- range $extraIngress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          {{- range .paths }}
+          - path: {{ .path }}
+            {{- if .pathType }}
+            pathType: {{ .pathType }}
+            {{- else }}
+            pathType: Prefix
+            {{- end }}
+            backend:
+              service:
+                {{- if ((.service).name) }}
+                name: {{ .service.name }}
+                {{- else }}
+                name: {{ include "mina-standard-daemon.fullname" $root }}
+                {{- end }}
+                port:
+                  {{- if (((.service).port).number) }}
+                  number: {{ .service.port.number }}
+                  {{- else if (((.service).port).name) }}
+                  name: {{ .service.port.name }}
+                  {{- else }}
+                  number: {{ $.Values.service.port }}
+                  {{- end }}
+          {{- end }}
+    {{- end }}
+{{- end }}

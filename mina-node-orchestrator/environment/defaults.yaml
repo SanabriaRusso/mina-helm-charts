@@ -1,0 +1,764 @@
+## Global configuration
+global:
+  namespace: mina
+  network: devnet
+
+## Common values
+## These are values shared among Nodes,
+## they can be overwritten at node level below, or with more 
+## base values at helmfile level.
+common:
+  tolerations: []
+    # - effect: NoSchedule
+    #   key: node-role.minaprotocol.org/itn-testbed
+    #   operator: Equal
+    #   value: "true"
+  affinity: {}
+    # nodeAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #       - matchExpressions:
+    #         - key: node-role.minaprotocol.org
+    #           operator: In
+    #           values:
+    #           - itn-testbed
+  daemon:
+    image:
+      repository: minaprotocol/mina-daemon
+      pullPolicy: IfNotPresent
+      tag: 3.0.4-alpha2-b8cdab0-bullseye-devnet
+    peerListUrl: ""
+    volumeMounts: []
+    env:
+      MINA_CLIENT_TRUSTLIST: '10.0.0.0/8'
+    # envFromSecret:
+    #   - name:
+    #     secretKeyRef:
+    #       name: mina-secrets
+    #       key: mina-secrets.json
+    envFromSecret: []
+    init:
+      libp2pKeys:
+        password: ""
+    ports: {}
+    # Default empty values for conditional fields
+    service:
+      type: ""
+      annotations: {}
+      enable: ""
+    command: []
+    args: []
+    extraContainers: []
+    extraVolumeMounts: []
+    livenessProbe: {}
+    readinessProbe: {}
+    replicas: ""
+  volumes: []
+
+## Default Configuration for Nodes
+defaults:
+  plain:
+    needs: [] # Other Release name
+    templates: # required. Template for Release
+      - templates/plain.yaml.gotmpl
+    values: # Default environment values, used in templates only
+      ## Secrets to be created in the namespace
+      ## These are used in the templates to create secrets
+      secrets:
+        secretsAnnotations: {}
+        secrets: []
+      # secretsAnnotations:
+      #   app.o1labs.org/baseline-chart: mina-standard-daemon
+      # secrets: []
+      #   # - name: test
+      #   #   labels:
+      #   #     mylabel: label
+      #   #   data:
+      #   #     key: value
+      ## Debug mode
+      ## If this is set to true, then no automatic args are injected.
+      ## This is useful for debugging, but not recommended for production
+      debug: false
+      ## Ingress configuration
+      ## This is used to create an Ingress resource for the daemon
+      ## It defaults to external port. Usually, this is used for graphql-port
+      ingress:
+        enable: false
+      #   # annotations: {}
+      #   # ingressClassName: nginx
+      #   # hosts:
+      #   #   - host: mina-standard-plain.gcp.o1test.net
+      #   #     paths:
+      #   #       - path: /
+      #   #         service:
+      #   #           name: standard-plain # optional. Defaults to Release name
+      #   #           port:
+      #   #             name: graphql-port # optional. Defaults to external-port
+      #   #             number: 3085 # optional. Defaults to external-port
+      ## Init containers configuration
+      extraInitContainers: [] # optional. Extra init containers to add to the pod
+        # - name: mina-extra
+        #   image:
+        #     repository: mina-extra
+        #     pullPolicy: IfNotPresent
+        #     tag: ""
+      ## Extra ingress configuration
+      extraIngress: {}
+      ## Extra services configuration
+      extraServices: {}
+      ## Extra volumes configuration
+      extraVolumes: {}
+      daemon:
+        ## Ports configuration includes keys from Kubernetes PodSpec
+        ## Even if in the Kubernetes API these are specified as a list,
+        ## we use a map to allow for easy referencing in templates.
+        ##
+        ## At least one port definition is required.
+        ## The ports below are the bare minimum for Mina nodes,
+        ## and they names do matter; mainly because ENVs are created
+        ## from them, and the default values are used in the templates.
+        ports: # required
+          external:
+            name: external-port
+            protocol: TCP
+            containerPort: 10005
+            hostPort: 10005
+          client: 
+            name: client-port
+            protocol: TCP
+            containerPort: 8301
+          graphql:
+            name: graphql-port
+            protocol: TCP
+            containerPort: 3085
+          metrics:
+            name: metrics-port
+            protocol: TCP
+            containerPort: 8081
+        ## Required Environment variables for the daemon
+        ## NOTE: as with ports, these are specified as a map for easy reference in templates.
+        env: {}
+        ## Additional envs from secrets
+        ## These are used to create environment variables from existing secrets
+        envFromSecret: []
+        # - name: MY_ENV
+        #   secretKeyRef:
+        #     name: mina-secrets
+        #     key: mina-secrets.json
+        ## Additional arguments for the daemon command. Daemon-level
+        ## over-writes this list, and all list.
+        extraArgs: []
+        ## Override daemon image (empty by default)
+        image: {}
+        ## Override daemon command (empty by default)
+        command: []
+        ## Override daemon args (empty by default)
+        args: []
+        ## Override peer list URL (empty by default)
+        peerListUrl: ""
+        ## Service configuration (empty by default)
+        service:
+          type: ""
+          annotations: {}
+        ## Probe configurations (empty by default)
+        livenessProbe: {}
+        readinessProbe: {}
+        ## Extra containers and volume mounts (empty by default)
+        extraContainers: []
+        extraVolumeMounts: []
+        ## Replica count (empty by default)
+        replicas: ""
+        ## Additional init configuration for the daemon
+        ## This includes:
+        ## - Fixing host dir permissions
+        ## - Keys and wallet install
+        ## - Libp2p key generation
+        init: # required if .enable: true
+          enable: true
+          libp2pKeys:
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-libp2p-keys
+          genesis: # fetch genesis ledger
+            fromSecret: false
+            secret:
+              name: a-secret
+              key: genesis-config.json
+          keys:
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-keys
+        # network: global-override # optional. Overrides global.network
+        persistence: # optional. Persistent volume configuration
+          enable: false
+          annotations: {}
+          claim:
+            storageClassName: openebs-hostpath
+            size: 10Gi
+        resources:
+          requests:
+            cpu: "6"
+            memory: 10Gi
+          limits:
+            cpu: "8"
+            memory: 12Gi
+
+        # additional containers to add to the pod
+        extraContainers: []
+
+      tolerations: []
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
+      affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed
+  blockProducer:
+    needs: [] # Other Release name
+    templates: # required. Template for Release
+      - templates/plain.yaml.gotmpl
+      - templates/blockProducer.yaml.gotmpl
+    values: # Default environment values, used in templates only
+      secrets:
+        secretsAnnotations: {}
+        secrets: []
+      debug: false
+      ingress:
+        enable: false
+      extraIngress: {}
+      extraServices: {}
+      extraVolumes: {}
+      extraInitContainers: []
+      daemon:
+        ports: # required
+          external:
+            name: external-port
+            protocol: TCP
+            containerPort: 10005
+            hostPort: 10005
+          client:
+            name: client-port
+            protocol: TCP
+            containerPort: 8301
+          graphql:
+            name: graphql-port
+            protocol: TCP
+            containerPort: 3085
+          metrics:
+            name: metrics-port
+            protocol: TCP
+            containerPort: 8081
+        env: {}
+        envFromSecret: []
+        extraArgs: []
+        image: {}
+        command: []
+        args: []
+        peerListUrl: ""
+        service:
+          type: ""
+          annotations: {}
+        livenessProbe: {}
+        readinessProbe: {}
+        extraContainers: []
+        extraVolumeMounts: []
+        replicas: ""
+        init: # required if .enable: true
+          enable: true
+          libp2pKeys:
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-libp2p-keys
+          genesis: # fetch genesis ledger
+            fromSecret: false
+            secret:
+              name: a-secret
+              key: genesis-config.json
+          keys:
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-keys
+        persistence: # optional. Persistent volume configuration
+          enable: false
+          annotations: {}
+          claim:
+            storageClassName: openebs-hostpath
+            size: 10Gi
+        resources:
+          requests:
+            cpu: "6"
+            memory: 10Gi
+          limits:
+            cpu: "8"
+            memory: 12Gi
+      tolerations: []
+      affinity: {}
+  coordinator:
+    needs: [] # Other Release name
+    templates: # required. Template for Release
+      - templates/plain.yaml.gotmpl
+      - templates/coordinator.yaml.gotmpl
+    values: # Default environment values, used in templates only
+      secrets:
+        secretsAnnotations: {}
+        secrets: []
+      debug: false
+      ingress:
+        enable: false
+      extraIngress: {}
+      extraServices: {}
+      extraVolumes: {}
+      extraInitContainers: []
+      daemon:
+        ports: # required
+          external:
+            name: external-port
+            protocol: TCP
+            containerPort: 10005
+            hostPort: 10005
+          client: 
+            name: client-port
+            protocol: TCP
+            containerPort: 8301
+          graphql:
+            name: graphql-port
+            protocol: TCP
+            containerPort: 3085
+          metrics:
+            name: metrics-port
+            protocol: TCP
+            containerPort: 8081
+        env:
+          WORK_SELECTION: seq
+          CODA_SNARK_KEY: ''
+          CODA_SNARK_FEE: '0.01'
+        envFromSecret: []
+        extraArgs: []
+        image: {}
+        command: []
+        args: []
+        peerListUrl: ""
+        service:
+          type: ""
+          annotations: {}
+        livenessProbe: {}
+        readinessProbe: {}
+        extraContainers: []
+        extraVolumeMounts: []
+        replicas: ""
+        init: # required if .enable: true
+          enable: true
+          libp2pKeys:
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-libp2p-keys
+          genesis: # fetch genesis ledger
+            fromSecret: false
+            secret:
+              name: a-secret
+              key: genesis-config.json
+          keys:
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-keys
+        # network: global-override # optional. Overrides global.network
+        persistence: # optional. Persistent volume configuration
+          enable: false
+          annotations: {}
+          claim:
+            storageClassName: openebs-hostpath
+            size: 10Gi
+        resources:
+          requests:
+            cpu: "6"
+            memory: 10Gi
+          limits:
+            cpu: "8"
+            memory: 12Gi
+      tolerations: []
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
+      affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed  
+  snarkWorker:
+    needs: [] # Other Release name
+    templates: # required. Template for Release
+      - templates/plain.yaml.gotmpl
+      - templates/snarkWorker.yaml.gotmpl
+    values: # Default environment values, used in templates only
+      secrets:
+        secretsAnnotations: {}
+        secrets: []
+      debug: false
+      ingress:
+        enable: false
+      extraIngress: {}
+      extraServices: {}
+      extraVolumes: {}
+      extraInitContainers: []
+      daemon:
+        env:
+          RAYON_NUM_THREADS: 4
+        envFromSecret: []
+        extraArgs: []
+        image: {}
+        command: []
+        args: []
+        peerListUrl: ""
+        service:
+          type: ""
+          annotations: {}
+        livenessProbe: {}
+        readinessProbe: {}
+        extraContainers: []
+        extraVolumeMounts: []
+        replicas: ""
+        init: # required if .enable: true
+          enable: false
+        # network: global-override # optional. Overrides global.network
+        persistence: # optional. Persistent volume configuration
+          enable: false
+        ports:
+          external:
+            name: external-port
+            protocol: TCP
+            containerPort: 8080
+            hostPort: 8080
+          metrics:
+            name: metrics-port
+            protocol: TCP
+            containerPort: 8081            
+        resources:
+          requests:
+            cpu: "4"
+            memory: 6Gi
+          limits:
+            cpu: "16"
+            memory: 16Gi
+      tolerations: []
+      affinity: {}
+  archive:
+    needs: []
+    templates:
+      - templates/plain.yaml.gotmpl
+      - templates/postgresql.yaml.gotmpl
+    values:
+      secrets:
+        secretsAnnotations: {}
+        secrets: []
+      debug: false
+      extraIngress: {}
+      extraServices: {}
+      extraVolumes: {}
+      extraInitContainers: []
+      ## Postgresql configuration.
+      ## This is not exactly the same schema as Bitnami's, but provides useful keys to e.g.,
+      ## launch pre-defined initContainers used to bootstrap db, password and user settings, etc.
+      ## If you need to check what exact values are sent to the Chart, check the templates/postgresql.yaml.gotmpl
+      postgresql:
+        enable: true
+        primary:
+          affinity:
+          tolerations: []
+        global:
+          postgresql:
+            auth:
+              username: mina
+              password: password
+              database: archive
+              gcpSecret: false # Use GCP secret manager to fetchSecretValue from .password reference
+        ## Primary Sidecars: pre-defined containers that start before the main container
+        ## but continue running alongside it.
+        ## We use them to fetch schema or dump data from a remote location.
+        ## Two types are supported: fromSchema and fromDump.
+        sidecars:
+          type: fromSchema # fromSchema or fromDump
+          fromSchema:
+            url: https://raw.githubusercontent.com/MinaProtocol/mina/refs/heads/georgeee/compatible-with-itn/src/app/archive/create_schema.sql
+          fromDump:
+            url: https://storage.googleapis.com/mina-archive-dumps/devnet-2021-09-01-00-00-00.sql
+        resources:
+          requests:
+            memory: 1Gi
+            cpu: "1"
+          limits:
+            memory: 2Gi
+            cpu: "3"
+        persistence:
+          enabled: true
+          size: 20Gi
+          storageClass: "openebs-hostpath"
+          annotations:
+            argocd.argoproj.io/sync-options: Delete=true
+      secrets:
+        secretsAnnotations: {}
+        secrets: []
+      ingress:
+        enable: false
+      extraIngress: {}
+      extraServices: {}
+      extraVolumes: {}
+      extraInitContainers: []
+      daemon:
+        image:
+          repository: minaprotocol/mina-archive
+          pullPolicy: IfNotPresent
+          tag: 3.0.4-alpha2-b8cdab0-bullseye
+        ports:
+          external:
+            name: archive-port
+            protocol: TCP
+            containerPort: 3086
+          client: 
+            name: postgres-port
+            protocol: TCP
+            containerPort: 5432
+          metrics:
+            name: an-metrics-port
+            protocol: TCP
+            containerPort: 10002
+        env:
+         DAEMON_METRICS_PORT: 10002
+         ARCHIVE_PORT: 3086
+         POSTGRES_PORT: 5432
+        envFromSecret: []
+        image: {}
+        command: []
+        args:
+          - mina-archive
+          - run
+          - -metrics-port
+          - $(DAEMON_METRICS_PORT)
+          - -server-port
+          - $(ARCHIVE_PORT)
+          - -postgres-uri
+          - postgresql://mina:password@archive-postgresql:5432/archive          
+        peerListUrl: ""
+        service:
+          type: ""
+          annotations: {}
+        extraArgs: {}
+        readinessProbe: {}
+        extraContainers: []
+        extraVolumeMounts: []
+        replicas: ""
+        livenessProbe:
+          failureThreshold: 10
+          initialDelaySeconds: 10
+          periodSeconds: 60
+          successThreshold: 1
+          terminationGracePeriodSeconds: 10
+          tcpSocket:
+            port: archive-port
+          timeoutSeconds: 5
+        readinessProbe: {}
+        extraContainers: []
+        extraVolumeMounts: []
+        replicas: ""
+        init: # required if .enable: true
+          enable: false
+          libp2pKeys:
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-libp2p-keys
+          genesis: # fetch genesis ledger
+            fromSecret: false
+            secret:
+              name: a-secret
+              key: genesis-config.json
+          keys:
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-keys
+        persistence:
+          enable: false
+          annotations: {}
+          claim:
+            storageClassName: openebs-hostpath
+            size: 10Gi
+        resources:
+          requests:
+            cpu: "4"
+            memory: 8Gi
+          limits:
+            cpu: "6"
+            memory: 10Gi
+      tolerations: []
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
+      affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed
+  seed:
+    needs: [] # Other Release name
+    templates: # required. Template for Release
+      - templates/plain.yaml.gotmpl
+      - templates/seed.yaml.gotmpl
+    values: # Default environment values, used in templates only
+      secrets:
+        secretsAnnotations: {}
+        secrets: []
+      debug: false
+      ingress:
+        enable: false
+      extraIngress: {}
+      extraServices: {}
+      extraVolumes: {}
+      extraInitContainers: []
+      daemon:
+        ports: # required
+          external:
+            name: external-port
+            protocol: TCP
+            containerPort: 10006
+            hostPort: 10006
+          client: 
+            name: client-port
+            protocol: TCP
+            containerPort: 8301
+          graphql:
+            name: graphql-port
+            protocol: TCP
+            containerPort: 3085
+          metrics:
+            name: metrics-port
+            protocol: TCP
+            containerPort: 8081
+        env: {}
+        envFromSecret: []
+        extraArgs: []
+        image: {}
+        command: []
+        args: []
+        peerListUrl: ""
+        service:
+          type: ""
+          annotations: {}
+        livenessProbe: {}
+        readinessProbe: {}
+        extraContainers: []
+        extraVolumeMounts: []
+        replicas: ""
+        init: # required if .enable: true
+          enable: true
+          libp2pKeys:
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-libp2p-keys
+          genesis: # fetch genesis ledger
+            fromSecret: false
+            secret:
+              name: a-secret
+              key: genesis-config.json
+          keys:
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-keys
+        persistence:
+          enable: false
+          annotations: {}
+          claim:
+            storageClassName: openebs-hostpath
+            size: 10Gi
+        resources:
+          requests:
+            cpu: "6"
+            memory: 10Gi
+          limits:
+            cpu: "8"
+            memory: 12Gi
+      tolerations: []
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
+      affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed
+
+## Releases are DAG-deployed, using `needs` to declare dependency
+nodes:
+  ## Plain Node Default configuration
+  plain: # node identifier
+    enable: false # should this be a Release?
+    role: plain # required for Mina Nodes. Determines daemon configuration
+    name: plain-1 # required. Unique Release name
+    values: {} # Environment values for the Release
+    # needs: [] # Other Release name
+    # templates: [] # List of templates to render
+      # - templates/example.yaml.gotmpl
+  archive:
+    enable: false
+    role: archive
+    name: archive-1
+    values: {}
+  seed:
+    enable: false
+    role: seed
+    name: seed-1
+    values:
+      daemon:
+        init:
+          genesis:
+            fromSecret: true
+            secret:
+              name: genesis-ledger
+              key: genesis-ledger.json
+      secrets:
+        secrets: []
+        # - name: genesis-ledger
+        #   data:
+        #     "genesis-ledger.json": |
+        #       {
+        #         "genesis":
+        #         {
+        #           "genesis_state_timestamp": "2025-02-05T18:25:00Z"
+        #         },
+        #         "ledger":
+        #         {
+        #           "add_genesis_winner": false,
+        #           "s3_data_hash": "985e0eb1650464d1f30158a81ba285f95cce967e9ea7fafe72f882b700dc1d65",
+        #           "hash": "jwUXq8BMvXX8J7EAtvMqgu624BPnqooVGzmHxx57ut88Ez7KmCe"
+        #         },
+        #         ...
+        #       }

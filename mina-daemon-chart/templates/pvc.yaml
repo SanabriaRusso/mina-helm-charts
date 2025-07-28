@@ -1,0 +1,17 @@
+{{- if .Values.persistentVolumeClaim.enable }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.persistentVolumeClaim.name | default (include "mina-standard-daemon.fullname" .) }}
+  annotations:
+    {{- toYaml .Values.persistentVolumeClaim.annotations | nindent 4 }}
+  labels:
+    {{- include "mina-standard-daemon.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - {{ .Values.persistentVolumeClaim.accessMode }}
+  storageClassName: {{ .Values.persistentVolumeClaim.storageClassName }}
+  resources:
+    requests:
+      storage: {{ .Values.persistentVolumeClaim.size }}
+{{- end }}

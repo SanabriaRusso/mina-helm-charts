@@ -1,0 +1,163 @@
+{{- $root := . }}
+{{- $username := .node.values.postgresql.global.postgresql.auth.username | default "mina" }}
+{{- $password := .node.values.postgresql.global.postgresql.auth.password | default "password" }}
+{{- if .node.values.postgresql.global.postgresql.auth.gcpSecret }}
+{{- $password = .node.values.postgresql.global.postgresql.auth.password | fetchSecretValue | trim | quote }}
+{{- end }}
+{{- $database := .node.values.postgresql.global.postgresql.auth.database | default "archive" }}
+{{- $pgport := .node.values.daemon.ports.client.containerPort }}
+postgresql:
+  enable: {{ .node.values.postgresql.enable }}
+  # Authentication configuration
+  auth:
+    enablePostgresUser: false
+  global:
+    postgresql:
+      auth:
+        username: {{ $username }}
+        password: {{ $password }}
+        database: {{ $database }}
+        enablePostgresUser: false
+  # Primary PostgreSQL configuration
+  primary:
+    {{- with .node.values.postgresql.sidecars }}
+    sidecars:
+      {{- if eq .type "fromSchema" }}
+      - image: postgres:15-alpine
+        command: [bash, -c]
+        name: from-schema
+        args:
+          - |
+
+            # Wait for PostgreSQL to be ready
+            until pg_isready -h localhost -p {{ $pgport }} -U {{ $username }}; do
+              echo "Waiting for PostgreSQL to be ready..."
+              sleep 2
+            done
+            
+            # Check if schema was already applied
+            SCHEMA_CHECK=$(psql --username {{ $username }} --host localhost --port {{ $pgport }} --dbname {{ $database }} -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'blocks'")
+            
+            if [ "$SCHEMA_CHECK" -eq "0" ]; then
+              echo "Schema not found, applying..."
+              apk add curl && \
+              cd /tmp && \
+              curl -O {{ .fromSchema.url }} && \
+              psql --username {{ $username }} \
+                  --host localhost \
+                  --port {{ $pgport }} \
+                  --dbname {{ $database }} \
+                  -f /tmp/create_schema.sql && \
+              rm -f /tmp/*.sql
+            else
+              echo "Schema already exists, skipping application"
+            fi
+            
+            # Always ensure isolation level is set correctly
+            psql --username {{ $username }} \
+                --host localhost \
+                --port {{ $pgport }} \
+                --dbname {{ $database }} \
+                -c "ALTER DATABASE archive SET DEFAULT_TRANSACTION_ISOLATION TO SERIALIZABLE;"
+                
+            echo "Schema setup complete. Exiting."
+            tail -f /dev/null
+      {{- else if eq .type "fromDump" }}
+      - image: postgres:15-alpine
+        command: [bash, -c]
+        name: from-dump
+        args:
+          - |
+
+            set -euxo pipefail
+            
+            # Wait for PostgreSQL to be ready
+            until pg_isready -h localhost -p {{ $pgport }} -U {{ $username }}; do
+              echo "Waiting for PostgreSQL to be ready..."
+              sleep 2
+            done
+            
+            # Check if data is already loaded by counting records in a core table
+            DATA_CHECK=$(psql --username {{ $username }} --host localhost --port {{ $pgport }} --dbname {{ $database }} -t -c "SELECT COUNT(*) FROM information_schema.tables WHERE table_schema = 'public' AND table_name = 'blocks'")
+            RECORD_CHECK=0
+            
+            if [ "$DATA_CHECK" -ne "0" ]; then
+              # If the table exists, check if it has records
+              RECORD_CHECK=$(psql --username {{ $username }} --host localhost --port {{ $pgport }} --dbname {{ $database }} -t -c "SELECT COUNT(*) FROM blocks LIMIT 1")
+            fi
+            
+            if [ "$DATA_CHECK" -eq "0" ] || [ "$RECORD_CHECK" -eq "0" ]; then
+              echo "Database appears empty, loading archive dump..."
+              apk add curl
+              cd /tmp
+              curl {{ .fromDump.url }} -o archive-dump.tar.gz
+              tar -xvf archive-dump.tar.gz
+              DUMP_FILE=$(find . -type f -name "*.sql" | head -n 1)
+              
+              if [ -n "$DUMP_FILE" ]; then
+                psql \
+                  --username {{ $username }} \
+                  --host localhost \
+                  --port {{ $pgport }} \
+                  --dbname {{ $database }} \
+                  -f "$DUMP_FILE"
+                rm -f "$DUMP_FILE"
+                rm -f archive-dump.tar.gz
+              else
+                echo "No SQL dump file found after extraction!"
+                exit 1
+              fi
+            else
+              echo "Data already appears to be loaded, skipping dump import"
+            fi
+            
+            # Always ensure isolation level is set correctly
+            psql \
+              --username {{ $username }} \
+              --host localhost \
+              --port {{ $pgport }} \
+              --dbname {{ $database }} \
+              -c "ALTER DATABASE archive SET DEFAULT_TRANSACTION_ISOLATION TO SERIALIZABLE;"
+            
+            echo "Bootstrap complete!"
+            tail -f /dev/null
+      {{- end }}
+        env:
+          - name: PGPASSWORD
+            value: {{ $password }}
+    {{- end }}
+    # Init scripts configuration
+    initdb:
+      user: {{ $username }}
+      password: {{ $password }}
+      database: {{ $database }}
+    # Optional: Configure additional PostgreSQL parameters
+    extendedConfiguration: |
+      max_connections = 10000
+      shared_buffers = 2048MB
+    # Resources configuration
+    resources:
+    {{- toYaml .node.values.postgresql.resources | nindent 6 }}
+    {{- $retentionPolicy := .node.values.postgresql.persistentVolumeClaimRetentionPolicy }}
+    {{- if ne (len $retentionPolicy) 0 }}
+    # Persistent Volume Claim retention policy
+    persistentVolumeClaimRetentionPolicy:
+      enabled: {{ $retentionPolicy.enabled | default true }}
+      whenDeleted: {{ $retentionPolicy.whenDeleted | default "Retain" }}
+      whenScaled: {{ $retentionPolicy.whenScaled | default "Retain" }}
+    {{- end }}
+    # Persistence configuration
+    persistence:
+    {{- toYaml .node.values.postgresql.persistence | nindent 6 }}
+    {{- $tolerations := .node.values.postgresql.primary.tolerations }}
+    {{- if ne (len $tolerations) 0 }}
+    tolerations:
+      {{- toYaml $tolerations | nindent 6 }}
+    {{- end }}
+    {{- $affinity := .node.values.postgresql.primary.affinity }}
+    {{- if ne (len $affinity) 0 }}
+    affinity:
+      {{- toYaml $affinity | nindent 6 }}
+    {{- end }}
+  shmVolume:
+    sizeLimit: "1Gi"

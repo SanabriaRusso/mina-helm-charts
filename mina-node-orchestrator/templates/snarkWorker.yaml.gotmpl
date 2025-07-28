@@ -1,0 +1,31 @@
+{{/*
+ Override default values for mina-standard-daemon here
+*/}}
+service:
+  enable: false
+daemon:
+  {{- $replicas := .node.values.daemon.replicas }}
+  {{- if ne $replicas "" }}
+  replicas: {{ $replicas }}
+  {{- end }}
+  args:
+  {{- $args := .node.values.daemon.args }}
+  {{- if ne (len $args) 0 }}
+  {{- range $args }}
+  - {{ . }}
+  {{- end }}
+  {{- else }}
+    - internal
+    - snark-worker
+    - -proof-level
+    - full
+    - -shutdown-on-disconnect
+    - "false"
+  {{- end }}
+  {{- $livenessProbe := .node.values.daemon.livenessProbe }}
+  ports:
+  livenessProbe:
+  {{- toYaml $livenessProbe | nindent 4 }}
+  {{- $readinessProbe := .node.values.daemon.readinessProbe }}
+  readinessProbe:
+  {{- toYaml $readinessProbe | nindent 4 }}

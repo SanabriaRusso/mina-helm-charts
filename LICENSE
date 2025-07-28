@@ -1,0 +1,66 @@
+MIT License
+
+Copyright (c) 2024 Mina Helm Charts Contributors
+
+Permission is hereby granted, free of charge, to any person obtaining a copy
+of this software and associated documentation files (the "Software"), to deal
+in the Software without restriction, including without limitation the rights
+to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+copies of the Software, and to permit persons to whom the Software is
+furnished to do so, subject to the following conditions:
+
+The above copyright notice and this permission notice shall be included in all
+copies or substantial portions of the Software.
+
+ATTRIBUTION REQUIREMENT:
+Any use, modification, or distribution of this Software must include attribution
+to the original Mina Helm Charts project and acknowledge that these charts are
+derived from o1Labs' original work.
+
+THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+SOFTWARE.
+
+DISCLAIMER OF LIABILITY:
+THE DEPLOYERS AND USERS OF THIS SOFTWARE ACKNOWLEDGE AND AGREE THAT:
+
+1. NO WARRANTIES: This software is provided without any warranties, express or
+   implied, including but not limited to warranties of merchantability, fitness
+   for a particular purpose, or non-infringement.
+
+2. NO GUARANTEES: The contributors make no guarantees about the functionality,
+   reliability, security, or performance of this software.
+
+3. USER RESPONSIBILITY: Any deployment, use, modification, or distribution of
+   this software is done entirely at the user's own risk and responsibility.
+
+4. DAMAGES AND DATA LOSS: The contributors shall not be liable for any direct,
+   indirect, incidental, special, exemplary, or consequential damages (including
+   but not limited to procurement of substitute goods or services; loss of use,
+   data, or profits; or business interruption) however caused and on any theory
+   of liability, whether in contract, strict liability, or tort (including
+   negligence or otherwise) arising in any way out of the use of this software,
+   even if advised of the possibility of such damage.
+
+5. DATA LOSS: Users acknowledge that deployment of blockchain infrastructure
+   carries inherent risks including but not limited to data loss, network
+   failures, security vulnerabilities, and financial losses. Users are solely
+   responsible for implementing appropriate backup, security, and risk
+   mitigation strategies.
+
+6. PRODUCTION USE: Users deploying this software in production environments
+   do so entirely at their own risk and are responsible for all consequences
+   of such deployment.
+
+7. INDEMNIFICATION: Users agree to indemnify and hold harmless the contributors
+   from any claims, damages, or expenses arising from their use of this software.
+
+ATTRIBUTION NOTICE:
+This project is derived from o1Labs' original Helm charts and has been 
+generalized for community use. The original work remains the intellectual 
+property of o1Labs, and this derivative work is provided under the terms 
+of this license.

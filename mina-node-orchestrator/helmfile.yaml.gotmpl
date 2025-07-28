@@ -1,0 +1,46 @@
+---
+environments:
+  default:
+    values:
+    - environment/defaults.yaml
+---
+releases:
+  {{/*
+    We will define a list of valid node roles to ensure
+    only these are deployed/supported.
+  */}}
+  {{- $rootContext := . -}}
+  {{- $validNodeRoles := list "plain" "coordinator" "snarkWorker" "blockProducer" "seed" "archive" }}
+  {{- range $nodeIdentifier, $nodeConfig := .Values.nodes }}
+  {{- if has $nodeConfig.role $validNodeRoles }}
+  {{- $nodeConfig = merge $nodeConfig ($rootContext.Values.defaults | get (printf "%s" $nodeConfig.role)) }}
+  - name: {{ required "Node name is required" $nodeConfig.name }}
+    labels:
+      role: {{ required "Node role is required" $nodeConfig.role }}
+      name: {{ required "Node name is required" $nodeConfig.name }}
+    installed: {{ $nodeConfig.enable | default false }}
+    namespace: {{ required "Global namespace is required" $rootContext.Values.global.namespace }}
+    chart: ../mina-standard-daemon
+    {{- if hasKey $nodeConfig "needs" }}
+    needs:
+      {{- toYaml $nodeConfig.needs | nindent 6 }}
+    {{- end }}
+    values:
+      {{/*
+        We send an object with the root context to the template, as well
+        as the local 'node' context. This allows us to access particular
+        values for the node, as well as the root context.
+      */}}
+      {{- $context := dict "node" ($nodeConfig | deepCopy) "root" $rootContext }}
+      {{- if hasKey $nodeConfig "templates" -}}
+      {{- range $template := $nodeConfig.templates }}
+      - {{ tpl (readFile $template) $context | nindent 8 }}
+      {{- end }}
+      {{- end }}
+  {{- else }}
+  {{/*
+    Fail if an invalid role is found
+  */}}
+  {{- fail "Node not in valid roles" }}
+  {{- end }}
+  {{- end }}
