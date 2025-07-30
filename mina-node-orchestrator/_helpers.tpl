@@ -113,7 +113,7 @@ secrets: []
 */}}
 {{- define "mina-standard-node.plain.env" -}}
 {{- $root := .root.Values }}
-{{- if ne .node.role "archive" }}
+{{- if not (has (printf "%s" .node.role) (list "archive" "openminaseed")) }}
 {{- $ports := merge .node.values.daemon.ports $root.common.daemon.ports }}
 {{- $metricsPort := index $ports "metrics" }}
 {{- if $metricsPort }}

@@ -10,7 +10,7 @@ releases:
     only these are deployed/supported.
   */}}
   {{- $rootContext := . -}}
-  {{- $validNodeRoles := list "plain" "coordinator" "snarkWorker" "blockProducer" "seed" "archive" }}
+  {{- $validNodeRoles := list "plain" "coordinator" "snarkWorker" "blockProducer" "seed" "archive" "openminaseed" }}
   {{- range $nodeIdentifier, $nodeConfig := .Values.nodes }}
   {{- if has $nodeConfig.role $validNodeRoles }}
   {{- $nodeConfig = merge $nodeConfig ($rootContext.Values.defaults | get (printf "%s" $nodeConfig.role)) }}
