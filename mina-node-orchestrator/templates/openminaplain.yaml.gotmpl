@@ -24,7 +24,7 @@ daemon:
       set -euo pipefail
       exec openmina node \
       --verbosity=info \
-      --peer-list-url={{ $peerList }}""
+      --peer-list-url={{ $peerList }}
   {{- end }}
   extraArgs:
   {{- range .node.values.daemon.extraArgs }}
