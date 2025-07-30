@@ -683,11 +683,11 @@ defaults:
         #           values:
         #           - itn-testbed
 
-  openminaseed:
+  openminaplain:
     needs: [] # Other Release name
     templates: # required. Template for Release
       - templates/plain.yaml.gotmpl
-      - templates/openminaseed.yaml.gotmpl
+      - templates/openminaplain.yaml.gotmpl
     values: # Default environment values, used in templates only
       ## Secrets to be created in the namespace
       ## These are used in the templates to create secrets
@@ -746,8 +746,8 @@ defaults:
           external:
             name: external-port
             protocol: TCP
-            containerPort: 3080
-            hostPort: 3080
+            containerPort: 3000
+            hostPort: 3000
           libp2p:
             name: libp2p-port
             protocol: TCP
@@ -766,7 +766,7 @@ defaults:
         ## over-writes this list, and all list.
         extraArgs: []
         ## Override daemon image (empty by default)
-        image: {}
+        # image: {}
         ## Override daemon command (empty by default)
         command: []
         ## Override daemon args (empty by default)
@@ -819,6 +819,7 @@ defaults:
         #           operator: In
         #           values:
         #           - itn-testbed
+
 ## Releases are DAG-deployed, using `needs` to declare dependency
 nodes:
   ## Plain Node Default configuration

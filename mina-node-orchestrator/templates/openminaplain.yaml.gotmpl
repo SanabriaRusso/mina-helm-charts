@@ -1,0 +1,48 @@
+{{- $peerList := .root.Values.common.daemon.peerListUrl }}
+{{- $nodePeerList := .node.values.daemon.peerListUrl }}
+{{- if ne $nodePeerList "" }}
+{{- $peerList = $nodePeerList }}
+{{- end }}
+daemon:
+  command:
+  {{- if .node.values.daemon.command }}
+  {{- toYaml .node.values.daemon.command | nindent 4 }}
+  {{- else }}
+    - /bin/bash
+    - -c
+  {{- end }}
+  args:
+  {{- if .node.values.daemon.args }}
+  {{- range .node.values.daemon.args }}
+    - {{ . | quote }}
+  {{- end }}
+  {{- else }}
+    - |
+
+      #!/usr/bin/env bash
+      
+      set -euo pipefail
+      exec openmina node \
+      --verbosity=info \
+      --peer-list-url={{ $peerList }}""
+  {{- end }}
+  extraArgs:
+  {{- range .node.values.daemon.extraArgs }}
+    - {{ . | quote }}
+  {{- end }}
+  livenessProbe:
+  {{- if hasKey .node.values.daemon "livenessProbe" }}
+    {{- toYaml .node.values.daemon.livenessProbe | nindent 4 }}
+  {{- end }}
+  readinessProbe:
+  {{- if hasKey .node.values.daemon "readinessProbe" }}
+    {{- toYaml .node.values.daemon.readinessProbe | nindent 4 }}
+  {{- end }}
+  volumeMounts:
+  {{- toYaml .node.values.daemon.volumeMounts | nindent 4 }}
+  {{- if hasKey .node.values.daemon "extraVolumeMounts" }}
+  extraVolumeMounts:
+  {{- toYaml .node.values.daemon.extraVolumeMounts | nindent 4 }}
+  {{- end }}
+volumes:
+  {{- toYaml .node.values.daemon.volumes | nindent 4 }}  

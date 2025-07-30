@@ -44,7 +44,7 @@ app.kubernetes.io/managed-by: {{ .Release.Service }}
   Labels below are added to keep backwards compatibility 
 */}}
 app: {{ .Release.Name }}
-version: {{ trunc 6 (.Values.daemon.image.tag) | trimSuffix "-" }}
+version: {{ trunc 6 (.Values.daemon.image.tag) | trimSuffix "-" | trimSuffix "." }}
 role: {{ .Values.daemon.role}}
 testnet: {{ .Values.daemon.network }}
 {{- end }}
