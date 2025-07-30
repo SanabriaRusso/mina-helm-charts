@@ -64,9 +64,7 @@ defaults:
     values: # Default environment values, used in templates only
       ## Secrets to be created in the namespace
       ## These are used in the templates to create secrets
-      secrets:
-        secretsAnnotations: {}
-        secrets: []
+      secrets: []
       # secretsAnnotations:
       #   app.o1labs.org/baseline-chart: mina-standard-daemon
       # secrets: []
@@ -205,8 +203,6 @@ defaults:
             cpu: "8"
             memory: 12Gi
 
-        # additional containers to add to the pod
-        extraContainers: []
 
       tolerations: []
         # - effect: NoSchedule
@@ -228,9 +224,7 @@ defaults:
       - templates/plain.yaml.gotmpl
       - templates/blockProducer.yaml.gotmpl
     values: # Default environment values, used in templates only
-      secrets:
-        secretsAnnotations: {}
-        secrets: []
+      secrets: []
       debug: false
       ingress:
         enable: false
@@ -310,9 +304,7 @@ defaults:
       - templates/plain.yaml.gotmpl
       - templates/coordinator.yaml.gotmpl
     values: # Default environment values, used in templates only
-      secrets:
-        secretsAnnotations: {}
-        secrets: []
+      secrets: []
       debug: false
       ingress:
         enable: false
@@ -408,9 +400,7 @@ defaults:
       - templates/plain.yaml.gotmpl
       - templates/snarkWorker.yaml.gotmpl
     values: # Default environment values, used in templates only
-      secrets:
-        secretsAnnotations: {}
-        secrets: []
+      secrets: []
       debug: false
       ingress:
         enable: false
@@ -465,9 +455,7 @@ defaults:
       - templates/plain.yaml.gotmpl
       - templates/postgresql.yaml.gotmpl
     values:
-      secrets:
-        secretsAnnotations: {}
-        secrets: []
+      secrets: []
       debug: false
       extraIngress: {}
       extraServices: {}
@@ -512,15 +500,8 @@ defaults:
           storageClass: "openebs-hostpath"
           annotations:
             argocd.argoproj.io/sync-options: Delete=true
-      secrets:
-        secretsAnnotations: {}
-        secrets: []
       ingress:
         enable: false
-      extraIngress: {}
-      extraServices: {}
-      extraVolumes: {}
-      extraInitContainers: []
       daemon:
         image:
           repository: minaprotocol/mina-archive
@@ -544,8 +525,6 @@ defaults:
          ARCHIVE_PORT: 3086
          POSTGRES_PORT: 5432
         envFromSecret: []
-        image: {}
-        command: []
         args:
           - mina-archive
           - run
@@ -560,10 +539,6 @@ defaults:
           type: ""
           annotations: {}
         extraArgs: {}
-        readinessProbe: {}
-        extraContainers: []
-        extraVolumeMounts: []
-        replicas: ""
         livenessProbe:
           failureThreshold: 10
           initialDelaySeconds: 10
@@ -573,10 +548,6 @@ defaults:
           tcpSocket:
             port: archive-port
           timeoutSeconds: 5
-        readinessProbe: {}
-        extraContainers: []
-        extraVolumeMounts: []
-        replicas: ""
         init: # required if .enable: true
           enable: false
           libp2pKeys:
@@ -627,9 +598,7 @@ defaults:
       - templates/plain.yaml.gotmpl
       - templates/seed.yaml.gotmpl
     values: # Default environment values, used in templates only
-      secrets:
-        secretsAnnotations: {}
-        secrets: []
+      secrets: []
       debug: false
       ingress:
         enable: false
@@ -744,8 +713,7 @@ nodes:
             secret:
               name: genesis-ledger
               key: genesis-ledger.json
-      secrets:
-        secrets: []
+      secrets: []
         # - name: genesis-ledger
         #   data:
         #     "genesis-ledger.json": |

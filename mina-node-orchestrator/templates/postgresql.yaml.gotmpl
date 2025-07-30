@@ -138,26 +138,23 @@ postgresql:
     # Resources configuration
     resources:
     {{- toYaml .node.values.postgresql.resources | nindent 6 }}
-    {{- $retentionPolicy := .node.values.postgresql.persistentVolumeClaimRetentionPolicy }}
-    {{- if ne (len $retentionPolicy) 0 }}
+    {{- if hasKey .node.values.postgresql "persistentVolumeClaimRetentionPolicy" }}
     # Persistent Volume Claim retention policy
     persistentVolumeClaimRetentionPolicy:
-      enabled: {{ $retentionPolicy.enabled | default true }}
-      whenDeleted: {{ $retentionPolicy.whenDeleted | default "Retain" }}
-      whenScaled: {{ $retentionPolicy.whenScaled | default "Retain" }}
+      enabled: {{ .node.values.postgresql.persistentVolumeClaimRetentionPolicy.enabled | default true }}
+      whenDeleted: {{ .node.values.postgresql.persistentVolumeClaimRetentionPolicy.whenDeleted | default "Retain" }}
+      whenScaled: {{ .node.values.postgresql.persistentVolumeClaimRetentionPolicy.whenScaled | default "Retain" }}
     {{- end }}
     # Persistence configuration
     persistence:
     {{- toYaml .node.values.postgresql.persistence | nindent 6 }}
-    {{- $tolerations := .node.values.postgresql.primary.tolerations }}
-    {{- if ne (len $tolerations) 0 }}
+    {{- if hasKey .node.values.postgresql.primary "tolerations" }}
     tolerations:
-      {{- toYaml $tolerations | nindent 6 }}
+      {{- toYaml .node.values.postgresql.primary.tolerations | nindent 6 }}
     {{- end }}
-    {{- $affinity := .node.values.postgresql.primary.affinity }}
-    {{- if ne (len $affinity) 0 }}
+    {{- if hasKey .node.values.postgresql.primary "affinity" }}
     affinity:
-      {{- toYaml $affinity | nindent 6 }}
+      {{- toYaml .node.values.postgresql.primary.affinity | nindent 6 }}
     {{- end }}
   shmVolume:
     sizeLimit: "1Gi"

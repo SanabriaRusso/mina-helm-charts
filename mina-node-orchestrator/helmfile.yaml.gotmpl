@@ -20,7 +20,7 @@ releases:
       name: {{ required "Node name is required" $nodeConfig.name }}
     installed: {{ $nodeConfig.enable | default false }}
     namespace: {{ required "Global namespace is required" $rootContext.Values.global.namespace }}
-    chart: ../mina-standard-daemon
+    chart: ../mina-daemon-chart
     {{- if hasKey $nodeConfig "needs" }}
     needs:
       {{- toYaml $nodeConfig.needs | nindent 6 }}

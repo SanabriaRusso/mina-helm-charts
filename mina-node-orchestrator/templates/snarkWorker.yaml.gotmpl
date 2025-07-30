@@ -5,13 +5,12 @@ service:
   enable: false
 daemon:
   {{- $replicas := .node.values.daemon.replicas }}
-  {{- if ne $replicas "" }}
+  {{- if and $replicas (ne (printf "%v" $replicas) "") }}
   replicas: {{ $replicas }}
   {{- end }}
   args:
-  {{- $args := .node.values.daemon.args }}
-  {{- if ne (len $args) 0 }}
-  {{- range $args }}
+  {{- if hasKey .node.values.daemon "args" }}
+  {{- range .node.values.daemon.args }}
   - {{ . }}
   {{- end }}
   {{- else }}

@@ -10,9 +10,8 @@ All special templates stem from the *.plain.* variants.
 {{- define "mina-standard-node.plain.image" }}
 {{- $root := .root.Values }}
 {{- $image := $root.common.daemon.image }}
-{{- $nodeImage := .node.values.daemon.image }}
-{{- if ne (len $nodeImage) 0 }}
-{{- $image = $nodeImage }}
+{{- if hasKey .node.values.daemon "image" }}
+{{- $image = .node.values.daemon.image }}
 {{- end }}
 {{ toYaml $image }}
 {{- end -}}
@@ -23,26 +22,37 @@ All special templates stem from the *.plain.* variants.
   Also, fetches secrets from GCP Secret Manager if label 'gcp: *' is set.
 */}}
 {{- define "mina-standard-node.plain.secrets" -}}
-{{- with .node.values.secrets }}
-{{- $annotations := .secretsAnnotations }}
-{{- if ne (len $annotations) 0 }}
-secretsAnnotations:
-{{- toYaml $annotations | indent 2 }}
+{{- $secretsList := list }}
+{{- $secretsAnnotations := dict }}
+{{- if .node.values.secrets }}
+  {{- if hasKey .node.values.secrets "secrets" }}
+    {{/* Handle nested structure: secrets: { secrets: [...], secretsAnnotations: {...} } */}}
+    {{- $secretsList = .node.values.secrets.secrets }}
+    {{- if hasKey .node.values.secrets "secretsAnnotations" }}
+      {{- $secretsAnnotations = .node.values.secrets.secretsAnnotations }}
+    {{- end }}
+  {{- else if kindIs "slice" .node.values.secrets }}
+    {{/* Handle flat structure: secrets: [...] */}}
+    {{- $secretsList = .node.values.secrets }}
+  {{- end }}
 {{- end }}
-{{- $secretsList := .secrets }}
-{{- if ne (len $secretsList) 0 }}
+{{- if $secretsAnnotations }}
+secretsAnnotations:
+{{- toYaml $secretsAnnotations | indent 2 }}
+{{- end }}
+{{- if $secretsList }}
 secrets:
   {{- range $secretsList }}
   - name: {{ .name }}
-    {{- $labels := .labels | default dict }}
-    {{- if ne (len $labels) 0 }}
+    {{- $labels := dict }}
+    {{- if hasKey . "labels" }}
+    {{- $labels = .labels }}
     labels:
       {{ toYaml $labels | indent 6 }}
     {{- end }}
     data:
     {{- range $key, $val := .data }}
-    {{- $gcpLabel := index $labels "gcp" | default "" }}
-    {{- if ne $gcpLabel "" }}
+    {{- if hasKey $labels "gcp" }}
       {{ $key }}: {{ $val | fetchSecretValue | trim | quote }}
     {{ else }}
       {{ $key }}: {{ $val | trim | quote }}
@@ -84,7 +94,10 @@ secrets: []
 {{- define "mina-standard-node.plain.extraArgs" -}}
 {{- if eq (printf "%s" .node.values.daemon.init.enable) "true" }}
 {{/* Adding args to reference genesis config */}}
-{{- $genesisFile := .node.values.daemon.init.genesis.secret.key }}
+{{- $genesisFile := "genesis-config.json" }}
+{{- if hasKey (((.node.values.daemon.init).genesis).secret) "key" -}}
+{{- $genesisFile = (printf "%s" .node.values.daemon.init.genesis.secret.key) }}
+{{- end }}
 - -config-file
 - /root/.mina-config/{{ $genesisFile }}
 {{- end }}
@@ -304,9 +317,8 @@ secrets: []
 - name: install-key
   image:
   {{- $imageObj := .root.Values.common.daemon.image }}
-  {{- $nodeImage := .node.values.daemon.image }}
-  {{- if ne (len $nodeImage) 0 }}
-  {{- $imageObj = $nodeImage }}
+  {{- if hasKey .node.values.daemon "image" }}
+  {{- $imageObj = .node.values.daemon.image }}
   {{- end }}
   {{- toYaml $imageObj | nindent 4 }}
   command: ["bash", "-c"]
@@ -343,9 +355,8 @@ secrets: []
 - name: libp2p-perms
   image: 
   {{- $imageObj := .root.Values.common.daemon.image }}
-  {{- $nodeImage := .node.values.daemon.image }}
-  {{- if ne (len $nodeImage) 0 }}
-  {{- $imageObj = $nodeImage }}
+  {{- if hasKey .node.values.daemon "image" }}
+  {{- $imageObj = .node.values.daemon.image }}
   {{- end }}
   {{- toYaml $imageObj | nindent 4 }}
   command: ["bash", "-c"]
@@ -395,17 +406,17 @@ secrets: []
 {{- $ports := merge .node.values.daemon.ports $root.common.daemon.ports }}
 {{- $serviceType := "ClusterIP" }}
 {{- $annotations := dict }}
-{{- $service := .node.values.daemon.service }}
-{{- $serviceTypeOverride := $service.type }}
-{{- if ne $serviceTypeOverride "" }}
-{{- $serviceType = $serviceTypeOverride }}
+{{- if hasKey .node.values.daemon "service" }}
+{{- with .node.values.daemon.service }}
+{{- if hasKey . "type" }}
+{{- $serviceType = .type }}
 {{- end }}
-{{- $serviceAnnotations := $service.annotations }}
-{{- if ne (len $serviceAnnotations) 0 }}
-{{- $annotations = $serviceAnnotations }}
+{{- if hasKey . "annotations" }}
+{{- $annotations = .annotations }}
 {{- end }}
-{{- $enableValue := $service.enable }}
-enable: {{ if ne $enableValue "" }}{{ $enableValue }}{{ else }}true{{ end }}
+{{- end }}
+{{- end }}
+enable: {{ if hasKey . "enable" }}{{ . }}{{ else }}true{{ end }}
 type: {{ $serviceType }}
 annotations:
   {{- toYaml $annotations | nindent 2 }}
@@ -417,9 +428,8 @@ extraPorts:
 {{- range $key, $val := $extraPorts }}
 - name: {{ $val.name }}
   annotations:
-    {{- $portAnnotations := $val.annotations | default dict }}
-    {{- if ne (len $portAnnotations) 0 }}
-    {{- toYaml $portAnnotations | nindent 4 }}
+    {{- if hasKey $val "annotations" }}
+    {{- toYaml $val.annotations | nindent 4 }}
     {{- end }}
   port: {{ $val.containerPort }}
   targetPort: {{ $val.name }}
@@ -434,9 +444,8 @@ extraPorts:
 {{- define "mina-standard-node.plain.tolerations" -}}
 {{- $root := .root.Values }}
 {{- $tolerations := $root.common.tolerations | default list}}
-{{- $nodeTolerations := .node.values.tolerations }}
-{{- if ne (len $nodeTolerations) 0 }}
-{{- $tolerations = concat $tolerations $nodeTolerations }}
+{{- if hasKey .node.values "tolerations" }}
+{{- $tolerations = concat $tolerations .node.values.tolerations }}
 {{- end }}
 {{ toYaml $tolerations }}
 {{- end -}}
@@ -448,9 +457,8 @@ extraPorts:
 {{- define "mina-standard-node.plain.affinity" -}}
 {{- $root := .root.Values }}
 {{- $affinity := $root.common.affinity | default dict }}
-{{- $nodeAffinity := .node.values.affinity }}
-{{- if ne (len $nodeAffinity) 0 }}
-{{- $affinity = merge $nodeAffinity $affinity }}
+{{- if hasKey .node.values "affinity" }}
+{{- $affinity = merge .node.values.affinity $affinity }}
 {{- end }}
 {{ toYaml $affinity }}
 {{- end -}}
@@ -463,10 +471,9 @@ extraPorts:
 {{- $persistence := .node.values.daemon.persistence }}
 enable: {{ $persistence.enable }}
 {{- if $persistence.enable }}
-{{- $annotations := $persistence.annotations }}
-{{- if ne (len $annotations) 0 }}
+{{- with $persistence.annotations }}
 annotations:
-{{ toYaml $annotations | indent 2 }}
+{{ toYaml . | indent 2 }}
 {{- end }}
 storageClassName: {{ $persistence.claim.storageClassName }}
 size: {{ $persistence.claim.size }}
