@@ -1,0 +1,25 @@
+{{- $peerList := .root.Values.common.daemon.peerListUrl }}
+{{- $nodePeerList := .node.values.daemon.peerListUrl }}
+{{- if ne $nodePeerList "" }}
+{{- $peerList = $nodePeerList }}
+{{- end }}
+daemon:
+  args:
+  {{- if .node.values.daemon.args }}
+  {{- range .node.values.daemon.args }}
+    - {{ . | quote }}
+  {{- end }}
+  {{- else }}
+    - |
+
+      #!/usr/bin/env bash
+      
+      set -euo pipefail
+      exec openmina node \
+      --seed \
+      --verbosity=info \
+      --port={{ .node.values.daemon.ports.external.containerPort }} \
+      --libp2p-port={{ .node.values.daemon.ports.libp2p.containerPort }} \
+      --p2p-secret-key=${OPENMINA_P2P_SEC_KEY} \
+      --peer-list-url={{ $peerList }}
+  {{- end }}

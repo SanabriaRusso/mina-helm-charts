@@ -10,10 +10,11 @@ releases:
     only these are deployed/supported.
   */}}
   {{- $rootContext := . -}}
-  {{- $validNodeRoles := list "plain" "coordinator" "snarkWorker" "blockProducer" "seed" "archive" }}
+  {{- $validNodeRoles := list "plain" "coordinator" "snarkWorker" "blockProducer" "seed" "archive" "openminaplain" "openminaseed" }}
   {{- range $nodeIdentifier, $nodeConfig := .Values.nodes }}
   {{- if has $nodeConfig.role $validNodeRoles }}
   {{- $nodeConfig = merge $nodeConfig ($rootContext.Values.defaults | get (printf "%s" $nodeConfig.role)) }}
+  {{- if $nodeConfig.enable }}
   - name: {{ required "Node name is required" $nodeConfig.name }}
     labels:
       role: {{ required "Node role is required" $nodeConfig.role }}
@@ -37,6 +38,7 @@ releases:
       - {{ tpl (readFile $template) $context | nindent 8 }}
       {{- end }}
       {{- end }}
+  {{- end }}
   {{- else }}
   {{/*
     Fail if an invalid role is found
