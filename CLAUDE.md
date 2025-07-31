@@ -24,7 +24,7 @@ The repository follows a layered Helm chart architecture with two main component
 ### 2. mina-node-orchestrator (Node-Level Abstraction)
 - **Purpose**: Helmfile-based orchestrator that generates values for the baseline chart
 - **Type**: Helmfile with Go templates (`.gotmpl` files)
-- **Valid Node Roles**: `plain`, `coordinator`, `snarkWorker`, `blockProducer`, `seed`, `archive`
+- **Valid Node Roles**: `plain`, `coordinator`, `snarkWorker`, `blockProducer`, `seed`, `archive`, `openminaplain`, `openminaseed`
 - **Key Components**:
   - `helmfile.yaml.gotmpl`: Main orchestration file with role validation
   - `environment/defaults.yaml`: Node-level API schema and default values (590+ lines)
@@ -91,6 +91,7 @@ The system uses a hierarchical configuration approach:
 
 ### Image References
 - **Community Standard**: Use `minaprotocol/mina-daemon` and `minaprotocol/mina-archive`
+- **OpenMina Support**: Use OpenMina images for `openminaplain` and `openminaseed` roles
 - **Backwards Compatibility**: Original `gcr.io/o1labs-192920/*` references have been replaced
 
 ### Annotations and Labels  
@@ -130,3 +131,64 @@ When working with Go templates in `mina-node-orchestrator`, the context object c
 - Test template rendering with both `values.yaml` and `ct-values.yaml`
 - Validate helmfile syntax with `helmfile lint` for mina-node-orchestrator changes
 - Ensure role validation works correctly in `helmfile.yaml.gotmpl`
+- Test backwards compatibility with existing mina-standard-node configurations
+
+## OpenMina Node Support
+
+### Supported OpenMina Roles
+- **`openminaplain`**: Basic OpenMina node for network participation
+  - Uses `openmina node` command with configurable peer lists
+  - No initialization containers or key management required
+  - Default ports: 3000 (external), 8302 (libp2p)
+  
+- **`openminaseed`**: OpenMina seed node for peer discovery
+  - Includes `--seed` flag for seed node functionality
+  - Supports P2P secret key management via `OPENMINA_P2P_SEC_KEY` environment variable
+  - Default ports: 3080 (external), 8302 (libp2p)
+  - LoadBalancer service type for external accessibility
+
+### OpenMina Configuration Examples
+
+```yaml
+# Basic OpenMina plain node
+nodes:
+  openminaNode1:
+    enable: true
+    role: openminaplain
+    name: openmina-plain-1
+    values:
+      daemon:
+        ports:
+          external:
+            containerPort: 3080
+            hostPort: 3080
+          libp2p:
+            containerPort: 8302
+        service:
+          type: ClusterIP
+        resources:
+          requests:
+            cpu: "6"
+            memory: 12Gi
+
+# OpenMina seed node with custom configuration
+nodes:
+  openminaSeed1:
+    enable: true
+    role: openminaseed
+    name: openmina-seed-1
+    values:
+      daemon:
+        env:
+          OPENMINA_FQDN: seed.example.com
+        service:
+          type: LoadBalancer
+          annotations:
+            external-dns.alpha.kubernetes.io/hostname: openmina-seed-1.example.com
+```
+
+### Backwards Compatibility Notes
+- OpenMina nodes use different command structures (`openmina node` vs `mina daemon`)
+- Secret management patterns differ (environment variables vs mounted files)
+- Template structure follows existing patterns but with OpenMina-specific customizations
+- All conditional logic uses `hasKey` patterns for consistency with mina-standard-node compatibility
