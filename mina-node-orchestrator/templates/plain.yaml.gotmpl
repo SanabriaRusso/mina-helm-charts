@@ -48,7 +48,7 @@ daemon:
   args:
   {{- if hasKey .node.values.daemon "args" }}
   {{- range .node.values.daemon.args }}
-  - {{ . | quote }}
+    - {{ . | toString | quote }}
   {{- end }}
   {{- else }}
     - daemon

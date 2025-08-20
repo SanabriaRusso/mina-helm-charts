@@ -92,7 +92,7 @@ secrets: []
   "mina-standard-node.plain.extraArgs": provides a list of extra arguments.
 */}}
 {{- define "mina-standard-node.plain.extraArgs" -}}
-{{- if eq (printf "%s" .node.values.daemon.init.enable) "true" }}
+{{- if eq (printf "%v" .node.values.daemon.init.enable) "true" }}
 {{/* Adding args to reference genesis config */}}
 {{- $genesisFile := "genesis-config.json" }}
 {{- if hasKey (((.node.values.daemon.init).genesis).secret) "key" -}}
@@ -254,7 +254,7 @@ secrets: []
 {{- if .node.values.daemon.init.enable }}
 {{- include "mina-standard-node.plain.initContainers.copyKeys" . }}
 {{ include "mina-standard-node.plain.initContainers.installKeys" . }}
-{{- if ne .node.role "archive" }}
+{{- if (ne (printf "%v" .node.values.daemon.init.libp2pKeys.skip) "true") }}
 {{ include "mina-standard-node.plain.initContainers.libp2p" . }}
 {{- end }}
 {{- end }}
