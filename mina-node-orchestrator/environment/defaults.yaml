@@ -683,11 +683,11 @@ defaults:
         #           values:
         #           - itn-testbed
 
-  openminaplain:
+  minarustplain:
     needs: [] # Other Release name
     templates: # required. Template for Release
       - templates/plain.yaml.gotmpl
-      - templates/openminaplain.yaml.gotmpl
+      - templates/minarustplain.yaml.gotmpl
     values: # Default environment values, used in templates only
       ## Secrets to be created in the namespace
       ## These are used in the templates to create secrets
@@ -819,12 +819,12 @@ defaults:
         #           operator: In
         #           values:
         #           - itn-testbed
-  openminaseed:
+  minarustseed:
     needs: [] # Other Release name
     templates: # required. Template for Release
       - templates/plain.yaml.gotmpl
-      - templates/openminaplain.yaml.gotmpl
-      - templates/openminaseed.yaml.gotmpl
+      - templates/minarustplain.yaml.gotmpl
+      - templates/minarustseed.yaml.gotmpl
     values: # Default environment values, used in templates only
       ## Secrets to be created in the namespace
       ## These are used in the templates to create secrets
