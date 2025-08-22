@@ -22,7 +22,7 @@ daemon:
       #!/usr/bin/env bash
       
       set -euo pipefail
-      exec openmina node \
+      exec mina node \
       --verbosity=info \
       --peer-list-url={{ $peerList }}
   {{- end }}

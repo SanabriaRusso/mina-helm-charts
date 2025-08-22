@@ -15,7 +15,7 @@ daemon:
       #!/usr/bin/env bash
       
       set -euo pipefail
-      exec openmina node \
+      exec mina node \
       --seed \
       --verbosity=info \
       --port={{ .node.values.daemon.ports.external.containerPort }} \
