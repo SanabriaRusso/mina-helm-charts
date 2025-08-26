@@ -38,7 +38,7 @@ upgrade-timeout: 600s
 check-version-increment: true
 
 # Whether to validate maintainers
-validate-maintainers: false
+validate-maintainers: true
 
 # Validate chart schema
 validate-chart-schema: true
