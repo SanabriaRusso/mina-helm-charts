@@ -98,3 +98,4 @@ The proposed approach delimits functionality via abstraction levels, as well as 
 | tolerations | Tolerations for the pod | `[]` [Taints and Tolerations](https://kubernetes.io/docs/concepts/scheduling-eviction/taint-and-toleration/) |
 | affinity | Affinity settings for the pod | `{}` [Assigning Pods to Nodes](https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity) |
 | postgresql.enable | Enable PostgreSQL as dependency chart | `false` [Bitnami PostgreSQL Chart](https://github.com/bitnami/charts/tree/main/bitnami/postgresql) |
+

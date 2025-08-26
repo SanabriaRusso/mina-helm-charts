@@ -1,0 +1,161 @@
+name: Release Chart
+
+on:
+  push:
+    branches: [main, master]
+    paths:
+      - 'mina-daemon-chart/**'
+
+permissions:
+  contents: write
+  packages: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+        with:
+          version: v3.14.0
+
+      - name: Configure Git
+        run: |
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+
+      - name: Extract chart version
+        id: chart_version
+        run: |
+          cd mina-daemon-chart
+          version=$(yq eval '.version' Chart.yaml)
+          name=$(yq eval '.name' Chart.yaml)
+          echo "version=$version" >> $GITHUB_OUTPUT
+          echo "name=$name" >> $GITHUB_OUTPUT
+          echo "tag=v$version" >> $GITHUB_OUTPUT
+
+      - name: Check if tag exists
+        id: tag_check
+        run: |
+          if git rev-parse "refs/tags/${{ steps.chart_version.outputs.tag }}" >/dev/null 2>&1; then
+            echo "exists=true" >> $GITHUB_OUTPUT
+            echo "Tag ${{ steps.chart_version.outputs.tag }} already exists"
+          else
+            echo "exists=false" >> $GITHUB_OUTPUT
+            echo "Tag ${{ steps.chart_version.outputs.tag }} does not exist"
+          fi
+
+      - name: Add Helm repositories
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+
+      - name: Update chart dependencies
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          cd mina-daemon-chart
+          helm dependency update
+
+      - name: Package Helm chart
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          cd mina-daemon-chart
+          helm package . --destination ../packaged-charts/
+
+      - name: Login to GitHub Container Registry
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Push chart to OCI registry
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          chart_package="packaged-charts/${{ steps.chart_version.outputs.name }}-${{ steps.chart_version.outputs.version }}.tgz"
+          repository_owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          
+          helm push "$chart_package" "oci://ghcr.io/${repository_owner}/charts"
+
+      - name: Create and push tag
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          git tag -a "${{ steps.chart_version.outputs.tag }}" -m "Release ${{ steps.chart_version.outputs.name }} ${{ steps.chart_version.outputs.version }}"
+          git push origin "${{ steps.chart_version.outputs.tag }}"
+
+      - name: Generate release notes
+        if: steps.tag_check.outputs.exists == 'false'
+        id: release_notes
+        run: |
+          cd mina-daemon-chart
+          
+          cat << EOF > ../release_notes.md
+          ## 🚀 Chart Release ${{ steps.chart_version.outputs.version }}
+          
+          ### 📦 Chart Details
+          - **Name**: ${{ steps.chart_version.outputs.name }}
+          - **Version**: ${{ steps.chart_version.outputs.version }}
+          - **App Version**: $(yq eval '.appVersion' Chart.yaml)
+          
+          ### 📥 Installation
+          
+          #### Using OCI Registry (Recommended)
+          \`\`\`bash
+          helm install my-release oci://ghcr.io/$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')/charts/${{ steps.chart_version.outputs.name }} --version ${{ steps.chart_version.outputs.version }}
+          \`\`\`
+          
+          #### Using Git Repository
+          \`\`\`bash
+          helm install my-release https://github.com/${{ github.repository }}/archive/${{ steps.chart_version.outputs.tag }}.tar.gz
+          \`\`\`
+          
+          ### 📋 Recent Changes
+          $(git log --oneline --no-merges $(git describe --tags --abbrev=0 HEAD^)..HEAD --pretty=format:"- %s (%h)" | head -10)
+          
+          ### 🔧 Configuration
+          See the [values.yaml](https://github.com/${{ github.repository }}/blob/${{ steps.chart_version.outputs.tag }}/mina-daemon-chart/values.yaml) file for configuration options.
+          EOF
+
+      - name: Create GitHub Release
+        if: steps.tag_check.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.chart_version.outputs.tag }}
+          name: "Chart Release ${{ steps.chart_version.outputs.version }}"
+          body_path: release_notes.md
+          files: |
+            packaged-charts/${{ steps.chart_version.outputs.name }}-${{ steps.chart_version.outputs.version }}.tgz
+          draft: false
+          prerelease: false
+
+      - name: Output release information
+        if: steps.tag_check.outputs.exists == 'false'
+        run: |
+          repository_owner=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+          
+          echo "✅ Release completed successfully!"
+          echo ""
+          echo "📦 Chart Details:"
+          echo "  Name: ${{ steps.chart_version.outputs.name }}"
+          echo "  Version: ${{ steps.chart_version.outputs.version }}"
+          echo "  Tag: ${{ steps.chart_version.outputs.tag }}"
+          echo ""
+          echo "🌐 OCI Registry:"
+          echo "  oci://ghcr.io/${repository_owner}/charts/${{ steps.chart_version.outputs.name }}"
+          echo ""
+          echo "📥 Install Command:"
+          echo "  helm install my-release oci://ghcr.io/${repository_owner}/charts/${{ steps.chart_version.outputs.name }} --version ${{ steps.chart_version.outputs.version }}"
+
+      - name: Skip release (tag exists)
+        if: steps.tag_check.outputs.exists == 'true'
+        run: |
+          echo "⏭️  Skipping release - tag ${{ steps.chart_version.outputs.tag }} already exists"
+          echo "No changes detected in chart version since last release."
