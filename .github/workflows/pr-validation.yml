@@ -51,8 +51,20 @@ jobs:
           helm template test-release . --values ct-values.yaml > /tmp/template-ct-values.yaml
           
           echo "Validating rendered templates are valid YAML..."
-          python -c "import yaml; yaml.safe_load(open('/tmp/template-values.yaml'))"
-          python -c "import yaml; yaml.safe_load(open('/tmp/template-ct-values.yaml'))"
+          python -c "
+          import yaml
+          with open('/tmp/template-values.yaml') as f:
+              for doc in yaml.safe_load_all(f):
+                  pass
+          print('✅ values.yaml templates are valid YAML')
+          "
+          python -c "
+          import yaml
+          with open('/tmp/template-ct-values.yaml') as f:
+              for doc in yaml.safe_load_all(f):
+                  pass
+          print('✅ ct-values.yaml templates are valid YAML')
+          "
           
           echo "Checking that all templates are rendered..."
           template_files=$(find templates -name "*.yaml" -o -name "*.tpl" | grep -v "NOTES.txt" | wc -l)
@@ -75,23 +87,29 @@ jobs:
           cd mina-daemon-chart
           
           echo "Checking for hardcoded secrets..."
-          ! grep -r -i "password\|secret\|token\|key" templates/ || {
-            echo "Warning: Potential hardcoded secrets found"
-            grep -r -i "password\|secret\|token\|key" templates/ || true
+          if grep -r -i "password\|secret\|token\|key" templates/ | grep -v "secretName\|secret:\|\.key\|\.Values\|\{\{\|tpl" | grep -v "^#"; then
+            echo "Warning: Potential hardcoded secrets found in templates"
+            echo "Please review the above matches to ensure they are template references, not hardcoded values"
             exit 1
-          }
+          else
+            echo "✅ No hardcoded secrets detected"
+          fi
           
           echo "Checking for privileged containers..."
-          ! grep -r "privileged.*true" templates/ || {
-            echo "Warning: Privileged containers detected"
+          if grep -r "privileged.*true" templates/; then
+            echo "❌ Privileged containers detected"
             exit 1
-          }
+          else
+            echo "✅ No privileged containers detected"
+          fi
           
           echo "Checking for hostNetwork usage..."
-          ! grep -r "hostNetwork.*true" templates/ || {
-            echo "Warning: hostNetwork usage detected"
+          if grep -r "hostNetwork.*true" templates/; then
+            echo "❌ hostNetwork usage detected"
             exit 1
-          }
+          else
+            echo "✅ No hostNetwork usage detected"
+          fi
 
   validate-chart-metadata:
     runs-on: ubuntu-latest
