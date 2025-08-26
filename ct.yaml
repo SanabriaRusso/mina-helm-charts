@@ -2,7 +2,7 @@
 # See https://github.com/helm/chart-testing#configuration
 
 # The name of the target branch for pull request testing
-target-branch: master
+target-branch: main
 
 # Chart directories to test
 chart-dirs:
@@ -47,7 +47,7 @@ validate-chart-schema: true
 lint-conf: |
 
 # Additional helm install arguments for chart testing
-helm-extra-args: --timeout=600s
+helm-extra-args: --timeout=600s --values mina-daemon-chart/ct-values.yaml
 
 # Additional helm upgrade arguments for chart testing
 upgrade-extra-args: --timeout=600s
