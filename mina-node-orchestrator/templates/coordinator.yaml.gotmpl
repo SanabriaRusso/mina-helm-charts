@@ -5,7 +5,7 @@ daemon:
   args:
   {{- if hasKey .node.values.daemon "args" }}
   {{- range .node.values.daemon.args }}
-  - {{ . }}
+    - {{ . }}
   {{- end }}
   {{- else }}
     - daemon

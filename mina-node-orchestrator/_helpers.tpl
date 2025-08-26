@@ -10,7 +10,7 @@ All special templates stem from the *.plain.* variants.
 {{- define "mina-standard-node.plain.image" }}
 {{- $root := .root.Values }}
 {{- $image := $root.common.daemon.image }}
-{{- if hasKey .node.values.daemon "image" }}
+{{- if and (hasKey .node.values.daemon "image") (.node.values.daemon.image) }}
 {{- $image = .node.values.daemon.image }}
 {{- end }}
 {{ toYaml $image }}
