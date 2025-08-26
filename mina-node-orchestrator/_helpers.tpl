@@ -317,7 +317,7 @@ secrets: []
 - name: install-key
   image:
   {{- $imageObj := .root.Values.common.daemon.image }}
-  {{- if hasKey .node.values.daemon "image" }}
+  {{- if and (hasKey .node.values.daemon "image") (.node.values.daemon.image) }}
   {{- $imageObj = .node.values.daemon.image }}
   {{- end }}
   {{- toYaml $imageObj | nindent 4 }}
@@ -355,7 +355,7 @@ secrets: []
 - name: libp2p-perms
   image: 
   {{- $imageObj := .root.Values.common.daemon.image }}
-  {{- if hasKey .node.values.daemon "image" }}
+  {{- if and (hasKey .node.values.daemon "image") (.node.values.daemon.image) }}
   {{- $imageObj = .node.values.daemon.image }}
   {{- end }}
   {{- toYaml $imageObj | nindent 4 }}
