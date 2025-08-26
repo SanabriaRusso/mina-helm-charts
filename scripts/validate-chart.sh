@@ -65,12 +65,24 @@ echo "  Rendering with ct-values.yaml..."
 helm template test-release . --values ct-values.yaml > /tmp/template-ct-values.yaml
 
 echo "  Validating YAML syntax..."
-python3 -c "import yaml; yaml.safe_load(open('/tmp/template-values.yaml'))" 2>/dev/null || {
+python3 -c "
+import yaml
+with open('/tmp/template-values.yaml') as f:
+    for doc in yaml.safe_load_all(f):
+        pass
+print('✅ values.yaml templates are valid YAML')
+" || {
     echo "❌ Invalid YAML in template output (values.yaml)"
     exit 1
 }
 
-python3 -c "import yaml; yaml.safe_load(open('/tmp/template-ct-values.yaml'))" 2>/dev/null || {
+python3 -c "
+import yaml
+with open('/tmp/template-ct-values.yaml') as f:
+    for doc in yaml.safe_load_all(f):
+        pass
+print('✅ ct-values.yaml templates are valid YAML')
+" || {
     echo "❌ Invalid YAML in template output (ct-values.yaml)"
     exit 1
 }
@@ -89,9 +101,10 @@ echo ""
 
 echo "🔒 Step 6: Security validation..."
 echo "  Checking for hardcoded secrets..."
-if grep -r -i "password\|secret\|token\|key" templates/ 2>/dev/null | grep -v "secretName\|secret:\|\.key" | grep -v "^#"; then
+if grep -r -i "password\|secret\|token\|key" templates/ 2>/dev/null | grep -v "secretName\|secret:\|\.key\|\.Values\|\{\{\|tpl" | grep -v "^#"; then
     echo "⚠️  Warning: Potential hardcoded secrets found in templates"
     echo "Please review the above matches to ensure they are template references, not hardcoded values"
+    exit 1
 else
     echo "✅ No hardcoded secrets detected"
 fi
