@@ -75,7 +75,7 @@ jobs:
         run: ct lint --target-branch ${{ github.event.repository.default_branch }} --charts mina-daemon-chart
 
       - name: Run chart-testing (lint ct-values.yaml)
-        run: ct lint --target-branch ${{ github.event.repository.default_branch }} --charts mina-daemon-chart --helm-extra-args "--values mina-daemon-chart/ct-values.yaml" 
+        run: ct lint --target-branch ${{ github.event.repository.default_branch }} --charts mina-daemon-chart --helm-extra-args "-f mina-daemon-chart/ct-values.yaml" 
 
       - name: Create kind cluster
         uses: helm/kind-action@v1.12.0
@@ -83,7 +83,7 @@ jobs:
           cluster_name: test-cluster
 
       - name: Run chart-testing (install with ct-values)
-        run: ct install --target-branch ${{ github.event.repository.default_branch }} --charts mina-daemon-chart --helm-extra-args "--values mina-daemon-chart/ct-values.yaml"
+        run: ct install --target-branch ${{ github.event.repository.default_branch }} --charts mina-daemon-chart --helm-extra-args "-f mina-daemon-chart/ct-values.yaml"
 
       - name: Security scan
         run: |

@@ -181,7 +181,7 @@ daemon:
       image:
         repository: minaprotocol/mina-daemon
         pullPolicy: IfNotPresent
-        tag: 3.2.0-49b523c-bookworm-mainnet"
+        tag: 3.2.0-49b523c-bookworm-mainnet
       command:
         - "echo"
         - "Hello, World!"
@@ -232,7 +232,7 @@ extraServices: []
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
-  enable: true
+  enable: false
   className: ""
   annotations: {}
     # kubernetes.io/ingress.class: nginx
