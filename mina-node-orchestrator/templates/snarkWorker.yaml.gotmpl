@@ -9,7 +9,7 @@ daemon:
   replicas: {{ $replicas }}
   {{- end }}
   args:
-  {{- if hasKey .node.values.daemon "args" }}
+  {{- if and (hasKey .node.values.daemon "args") (.node.values.daemon.args) }}
   {{- range .node.values.daemon.args }}
     - {{ . }}
   {{- end }}
