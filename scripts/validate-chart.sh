@@ -28,6 +28,12 @@ if ! command -v helm &> /dev/null; then
     exit 1
 fi
 
+# Check if python3 is installed
+if ! command -v python3 &> /dev/null; then
+    echo "❌ Python 3 is not installed. Please install Python 3 first."
+    exit 1
+fi
+
 # Check if yq is installed
 if ! command -v yq &> /dev/null; then
     echo "❌ yq is not installed. Please install yq first (https://github.com/mikefarah/yq)"
@@ -35,6 +41,26 @@ if ! command -v yq &> /dev/null; then
 fi
 
 echo "✅ Prerequisites check passed"
+echo ""
+
+echo "🐍 Step 1.5: Setting up Python virtual environment..."
+# Create ephemeral virtual environment
+VENV_DIR="/tmp/helm-validation-venv-$$"
+python3 -m venv "$VENV_DIR"
+source "$VENV_DIR/bin/activate"
+
+# Install required Python packages
+pip install --quiet pyyaml
+
+# Cleanup function to remove venv on exit
+cleanup() {
+    echo "🧹 Cleaning up virtual environment..."
+    deactivate 2>/dev/null || true
+    rm -rf "$VENV_DIR" 2>/dev/null || true
+}
+trap cleanup EXIT
+
+echo "✅ Virtual environment ready"
 echo ""
 
 echo "🏗️  Step 2: Adding Helm repositories..."
@@ -65,7 +91,7 @@ echo "  Rendering with ct-values.yaml..."
 helm template test-release . --values ct-values.yaml > /tmp/template-ct-values.yaml
 
 echo "  Validating YAML syntax..."
-python3 -c "
+python -c "
 import yaml
 with open('/tmp/template-values.yaml') as f:
     for doc in yaml.safe_load_all(f):
@@ -76,7 +102,7 @@ print('✅ values.yaml templates are valid YAML')
     exit 1
 }
 
-python3 -c "
+python -c "
 import yaml
 with open('/tmp/template-ct-values.yaml') as f:
     for doc in yaml.safe_load_all(f):
