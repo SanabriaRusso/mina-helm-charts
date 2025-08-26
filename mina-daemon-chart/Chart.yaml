@@ -25,7 +25,7 @@ appVersion: "0.0.1"
 
 # List of maintainers for this chart
 maintainers:
-  - name: "Luis Sanabria-Russo"
+  - name: "SanabriaRusso"
     email: "luis@o1labs.org"
     url: "https://github.com/SanabriaRusso"
 
