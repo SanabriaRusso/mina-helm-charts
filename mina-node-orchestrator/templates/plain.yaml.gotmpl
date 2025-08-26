@@ -96,7 +96,7 @@ daemon:
   resources:
   {{- toYaml .node.values.daemon.resources | nindent 4 }}
   livenessProbe:
-  {{- if hasKey .node.values.daemon "livenessProbe" }}
+  {{- if and (hasKey .node.values.daemon "livenessProbe") .node.values.daemon.livenessProbe }}
     {{- toYaml .node.values.daemon.livenessProbe | nindent 4 }}
   {{- else }}
     failureThreshold: 10
@@ -109,7 +109,7 @@ daemon:
     timeoutSeconds: 5
   {{- end }}
   readinessProbe:
-  {{- if hasKey .node.values.daemon "readinessProbe" }}
+  {{- if and (hasKey .node.values.daemon "readinessProbe") .node.values.daemon.readinessProbe }}
     {{- toYaml .node.values.daemon.readinessProbe | nindent 4 }}
   {{- else }}
     failureThreshold: 10

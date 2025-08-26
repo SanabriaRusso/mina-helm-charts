@@ -21,8 +21,8 @@ daemon:
     - -shutdown-on-disconnect
     - "false"
   {{- end }}
-  {{- $livenessProbe := .node.values.daemon.livenessProbe }}
   ports:
+  {{- $livenessProbe := .node.values.daemon.livenessProbe }}
   livenessProbe:
   {{- toYaml $livenessProbe | nindent 4 }}
   {{- $readinessProbe := .node.values.daemon.readinessProbe }}
