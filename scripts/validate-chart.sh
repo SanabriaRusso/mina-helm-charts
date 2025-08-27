@@ -127,7 +127,10 @@ echo ""
 
 echo "🔒 Step 6: Security validation..."
 echo "  Checking for hardcoded secrets..."
-if grep -r -i "password\|secret\|token\|key" templates/ 2>/dev/null | grep -v "secretName\|secret:\|\.key\|\.Values\|\{\{\|tpl" | grep -v "^#"; then
+# Exclusion patterns for grep
+EXCLUDE_PATTERN1="secretName\|secret:\|\.key\|\.Values\|\{\{\|tpl"
+EXCLUDE_PATTERN2="^#"
+if grep -r -i "password\|secret\|token\|key" templates/ 2>/dev/null | grep -v "$EXCLUDE_PATTERN1" | grep -v "$EXCLUDE_PATTERN2"; then
     echo "⚠️  Warning: Potential hardcoded secrets found in templates"
     echo "Please review the above matches to ensure they are template references, not hardcoded values"
     exit 1
