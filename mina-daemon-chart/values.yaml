@@ -78,7 +78,7 @@ daemon:
   name: mina-daemon
 
   # This sets the network name for the daemon
-  network: devnet
+  network: mainnet
 
   # This sets the role of the node
   # This is a list of valid roles: plain, coordinator, snarkWorker, seed, archive
@@ -88,11 +88,11 @@ daemon:
   replicas: 1
 
   image:
-    repository: mina-daemon
+    repository: minaprotocol/mina-daemon
     # This sets the pull policy for images.
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.0.1"
+    tag: "3.2.0-49b523c-bookworm-mainnet"
 
   # This sets the command to run in the container more information can be found here: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/
   command: []

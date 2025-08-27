@@ -43,7 +43,7 @@ common:
     ports: {}
     # Default empty values for conditional fields
     service:
-      type: ""
+      type: "ClusterIP"
       annotations: {}
       enable: ""
     command: []
@@ -156,7 +156,7 @@ defaults:
         peerListUrl: ""
         ## Service configuration (empty by default)
         service:
-          type: ""
+          type: "ClusterIP"
           annotations: {}
         ## Probe configurations (empty by default)
         livenessProbe: {}
@@ -174,6 +174,7 @@ defaults:
         init: # required if .enable: true
           enable: true
           libp2pKeys:
+            skip: false
             password: ""
             fromSecret: false
             secret:
@@ -257,7 +258,7 @@ defaults:
         args: []
         peerListUrl: ""
         service:
-          type: ""
+          type: "ClusterIP"
           annotations: {}
         livenessProbe: {}
         readinessProbe: {}
@@ -267,6 +268,7 @@ defaults:
         init: # required if .enable: true
           enable: true
           libp2pKeys:
+            skip: false
             password: ""
             fromSecret: false
             secret:
@@ -340,7 +342,7 @@ defaults:
         args: []
         peerListUrl: ""
         service:
-          type: ""
+          type: "ClusterIP"
           annotations: {}
         livenessProbe: {}
         readinessProbe: {}
@@ -350,6 +352,7 @@ defaults:
         init: # required if .enable: true
           enable: true
           libp2pKeys:
+            skip: false
             password: ""
             fromSecret: false
             secret:
@@ -416,7 +419,7 @@ defaults:
         args: []
         peerListUrl: ""
         service:
-          type: ""
+          type: "ClusterIP"
           annotations: {}
         livenessProbe: {}
         readinessProbe: {}
@@ -534,7 +537,7 @@ defaults:
           - postgresql://mina:password@archive-postgresql:5432/archive          
         peerListUrl: ""
         service:
-          type: ""
+          type: "ClusterIP"
           annotations: {}
         extraArgs: {}
         livenessProbe:
@@ -549,6 +552,7 @@ defaults:
         init: # required if .enable: true
           enable: false
           libp2pKeys:
+            skip: false
             password: ""
             fromSecret: false
             secret:
@@ -631,7 +635,7 @@ defaults:
         args: []
         peerListUrl: ""
         service:
-          type: ""
+          type: "ClusterIP"
           annotations: {}
         livenessProbe: {}
         readinessProbe: {}
@@ -641,6 +645,7 @@ defaults:
         init: # required if .enable: true
           enable: true
           libp2pKeys:
+            skip: false
             password: ""
             fromSecret: false
             secret:

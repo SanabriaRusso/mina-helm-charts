@@ -1,0 +1,138 @@
+name: PR Validation
+
+on:
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'mina-daemon-chart/**'
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Helm
+        uses: azure/setup-helm@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Set up chart-testing
+        uses: helm/chart-testing-action@v2.7.0
+
+      - name: Add Helm repositories
+        run: |
+          helm repo add bitnami https://charts.bitnami.com/bitnami
+          helm repo update
+
+      - name: Lint Helm chart
+        run: |
+          cd mina-daemon-chart
+          helm dependency update
+          helm lint . --values values.yaml
+          helm lint . --values ct-values.yaml
+
+      - name: Template rendering tests
+        run: |
+          cd mina-daemon-chart
+          
+          echo "Testing with values.yaml..."
+          helm template test-release . --values values.yaml > /tmp/template-values.yaml
+          
+          echo "Testing with ct-values.yaml..."  
+          helm template test-release . --values ct-values.yaml > /tmp/template-ct-values.yaml
+          
+          echo "Validating rendered templates are valid YAML..."
+          python -c "
+          import yaml
+          with open('/tmp/template-values.yaml') as f:
+              for doc in yaml.safe_load_all(f):
+                  pass
+          print('✅ values.yaml templates are valid YAML')
+          "
+          python -c "
+          import yaml
+          with open('/tmp/template-ct-values.yaml') as f:
+              for doc in yaml.safe_load_all(f):
+                  pass
+          print('✅ ct-values.yaml templates are valid YAML')
+          "
+          
+          echo "Checking that all templates are rendered..."
+          template_files=$(find templates -name "*.yaml" -o -name "*.tpl" | grep -v "NOTES.txt" | wc -l)
+          rendered_resources=$(grep -c "^---" /tmp/template-values.yaml || echo "0")
+          echo "Template files: $template_files, Rendered resources: $rendered_resources"
+
+      - name: Run chart-testing (lint)
+        run: ct lint --target-branch ${{ github.event.repository.default_branch }} --charts mina-daemon-chart
+
+      - name: Run chart-testing (lint ct-values.yaml)
+        run: ct lint --target-branch ${{ github.event.repository.default_branch }} --charts mina-daemon-chart --helm-extra-args '--values ct-values.yaml'
+
+      - name: Create kind cluster
+        uses: helm/kind-action@v1.12.0
+        with:
+          cluster_name: test-cluster
+
+      - name: Run chart-testing (install with ct-values)
+        run: ct install --target-branch ${{ github.event.repository.default_branch }} --charts mina-daemon-chart
+
+      - name: Security scan
+        run: |
+          cd mina-daemon-chart
+          
+          echo "Checking for hardcoded secrets..."
+          if grep -r -i "password\|secret\|token\|key" templates/ | grep -v "secretName\|secret:\|\.key\|\.Values\|\{\{\|tpl" | grep -v "^#"; then
+            echo "Warning: Potential hardcoded secrets found in templates"
+            echo "Please review the above matches to ensure they are template references, not hardcoded values"
+            exit 1
+          else
+            echo "✅ No hardcoded secrets detected"
+          fi
+          
+          echo "Checking for privileged containers..."
+          if grep -r "privileged.*true" templates/; then
+            echo "❌ Privileged containers detected"
+            exit 1
+          else
+            echo "✅ No privileged containers detected"
+          fi
+          
+          echo "Checking for hostNetwork usage..."
+          if grep -r "hostNetwork.*true" templates/; then
+            echo "❌ hostNetwork usage detected"
+            exit 1
+          else
+            echo "✅ No hostNetwork usage detected"
+          fi
+
+  validate-chart-metadata:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate Chart.yaml
+        run: |
+          cd mina-daemon-chart
+          
+          # Check required fields
+          test -n "$(yq eval '.name' Chart.yaml)"
+          test -n "$(yq eval '.version' Chart.yaml)" 
+          test -n "$(yq eval '.description' Chart.yaml)"
+          test -n "$(yq eval '.appVersion' Chart.yaml)"
+          
+          # Validate semver
+          version=$(yq eval '.version' Chart.yaml)
+          if ! [[ $version =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Chart version must follow semantic versioning"
+            exit 1
+          fi
+          
+          echo "Chart metadata validation passed"

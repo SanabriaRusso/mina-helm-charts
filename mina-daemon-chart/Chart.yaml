@@ -22,6 +22,13 @@ version: 0.0.1
 # follow Semantic Versioning. They should reflect the version the application is using.
 # It is recommended to use it with quotes.
 appVersion: "0.0.1"
+
+# List of maintainers for this chart
+maintainers:
+  - name: "SanabriaRusso"
+    email: "luis@o1labs.org"
+    url: "https://github.com/SanabriaRusso"
+
 dependencies:
   - name: postgresql
     version: 16.4.7

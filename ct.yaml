@@ -1,0 +1,59 @@
+# Chart Testing Configuration
+# See https://github.com/helm/chart-testing#configuration
+
+# The name of the target branch for pull request testing
+target-branch: main
+
+# Chart directories to test
+chart-dirs:
+  - mina-daemon-chart
+
+# Helm repositories to add
+helm-repos:
+  - bitnami=https://charts.bitnami.com/bitnami
+
+# Additional Helm repositories for testing
+chart-repos:
+  - bitnami
+
+# Whether to enable debug mode
+debug: false
+
+# Whether to skip the clean up
+skip-clean-up: false
+
+# Whether to exclude charts that have not changed
+excluded-charts: []
+
+# Additional values files to consider for linting
+additional-charts-dirs: []
+
+# Chart install timeout in seconds
+install-timeout: 600s
+
+# Chart upgrade timeout in seconds  
+upgrade-timeout: 600s
+
+# Whether to check version increment
+check-version-increment: true
+
+# Whether to validate maintainers
+validate-maintainers: true
+
+# Validate chart schema
+validate-chart-schema: true
+
+# Additional Helm lint arguments
+lint-conf: |
+
+# Additional helm install arguments for chart testing
+helm-extra-args: --timeout=600s --values mina-daemon-chart/ct-values.yaml
+
+# Additional helm upgrade arguments for chart testing
+upgrade-extra-args: --timeout=600s
+
+# Namespace to install charts into
+namespace: ct-testing
+
+# Whether to print the computed configuration
+print-config: false

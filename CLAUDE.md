@@ -38,8 +38,13 @@ The repository follows a layered Helm chart architecture with two main component
 # Navigate to chart directory
 cd mina-daemon-chart
 
+# Run comprehensive local validation (includes all CI/CD checks)
+../scripts/validate-chart.sh
+
+# Individual validation steps:
 # Validate chart syntax and structure  
-helm lint .
+helm lint . --values values.yaml
+helm lint . --values ct-values.yaml
 
 # Test template rendering with default values
 helm template . --values values.yaml
@@ -76,6 +81,25 @@ helmfile apply --dry-run
 
 # Deploy to cluster
 helmfile apply
+```
+
+### CI/CD Pipeline Commands
+```bash
+# The repository includes GitHub Actions workflows:
+
+# PR Validation (automatic on PR):
+# - Helm lint and template rendering tests
+# - Chart-testing (ct) with kind cluster
+# - Security scanning for hardcoded secrets
+# - Chart metadata validation
+
+# Release Workflow (automatic on master/main push):
+# - Auto-tagging based on Chart.yaml version
+# - OCI registry publishing to ghcr.io
+# - GitHub release creation
+
+# Manual testing of validation workflow:
+./scripts/validate-chart.sh
 ```
 
 ## Configuration Hierarchy
@@ -127,11 +151,13 @@ When working with Go templates in `mina-node-orchestrator`, the context object c
 - AppVersion reflects the Mina daemon version being deployed
 
 ### Testing and Validation
-- Always run `helm lint` before committing changes to mina-daemon-chart
+- Always run `./scripts/validate-chart.sh` before committing changes to mina-daemon-chart
+- The validation script includes: helm lint, template rendering, security scanning, and metadata validation
 - Test template rendering with both `values.yaml` and `ct-values.yaml`
 - Validate helmfile syntax with `helmfile lint` for mina-node-orchestrator changes
 - Ensure role validation works correctly in `helmfile.yaml.gotmpl`
 - Test backwards compatibility with existing mina-standard-node configurations
+- GitHub Actions will automatically run comprehensive tests on PRs
 
 ## OpenMina Node Support
 
@@ -192,3 +218,37 @@ nodes:
 - Secret management patterns differ (environment variables vs mounted files)
 - Template structure follows existing patterns but with OpenMina-specific customizations
 - All conditional logic uses `hasKey` patterns for consistency with mina-standard-node compatibility
+
+## CI/CD Pipeline Architecture
+
+The repository includes a complete GitHub Actions-based CI/CD pipeline:
+
+### Automated Testing (`.github/workflows/pr-validation.yml`)
+- **Triggers**: Pull requests to master/main affecting mina-daemon-chart
+- **Validation Steps**:
+  - Helm lint with both values.yaml and ct-values.yaml
+  - Template rendering validation ensuring all templates render correctly
+  - Chart-testing (ct) with kind cluster for installation testing
+  - Security scanning for hardcoded secrets, privileged containers, hostNetwork usage
+  - Chart metadata validation with semantic versioning compliance
+- **Local Testing**: Use `./scripts/validate-chart.sh` to replicate all PR checks locally
+
+### Automated Releases (`.github/workflows/release.yml`)
+- **Triggers**: Pushes to master/main affecting mina-daemon-chart  
+- **Release Process**:
+  - Extracts version from Chart.yaml
+  - Creates git tags (format: v{version})
+  - Publishes to GitHub Container Registry (ghcr.io)
+  - Creates GitHub releases with auto-generated notes
+  - Skips if tag already exists (prevents duplicate releases)
+
+### Modern Chart Distribution
+- **Primary**: OCI registry at `ghcr.io/{owner}/charts/mina-standard-daemon`
+- **Installation**: `helm install my-release oci://ghcr.io/{owner}/charts/mina-standard-daemon`
+- **Versioning**: Semantic versioning with auto-tagging
+- **Security**: Uses GitHub's built-in OCI registry with minimal token permissions
+
+### Configuration Files
+- `ct.yaml`: Chart-testing configuration for standardized validation
+- `scripts/validate-chart.sh`: Local validation script replicating CI/CD checks
+- Both workflows use minimal GitHub token permissions for security

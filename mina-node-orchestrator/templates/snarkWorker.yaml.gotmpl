@@ -9,9 +9,9 @@ daemon:
   replicas: {{ $replicas }}
   {{- end }}
   args:
-  {{- if hasKey .node.values.daemon "args" }}
+  {{- if and (hasKey .node.values.daemon "args") (.node.values.daemon.args) }}
   {{- range .node.values.daemon.args }}
-  - {{ . }}
+    - {{ . }}
   {{- end }}
   {{- else }}
     - internal
@@ -21,8 +21,8 @@ daemon:
     - -shutdown-on-disconnect
     - "false"
   {{- end }}
-  {{- $livenessProbe := .node.values.daemon.livenessProbe }}
   ports:
+  {{- $livenessProbe := .node.values.daemon.livenessProbe }}
   livenessProbe:
   {{- toYaml $livenessProbe | nindent 4 }}
   {{- $readinessProbe := .node.values.daemon.readinessProbe }}

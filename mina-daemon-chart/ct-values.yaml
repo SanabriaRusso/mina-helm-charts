@@ -61,39 +61,48 @@ serviceAccount:
 initContainers:
 - name: init-container
   image:
-    repository: mina-init-container
+    repository: busybox
     pullPolicy: IfNotPresent
-    tag: ""
+    tag: "latest"
+  command:
+    - "echo"
+    - "Hello, World!"
 
 # This is for setting up the extra init containers
 extraInitContainers:
 - name: extra-init-container
   image:
-    repository: mina-extra-init-container
+    repository: busybox
     pullPolicy: IfNotPresent
-    tag: ""
+    tag: "latest"
+  command:
+    - "echo"
+    - "Hello, World!"
 
 daemon:
   # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
   name: mina-daemon
 
   # This sets the network name for the daemon
-  network: devnet
+  network: mainnet
 
   # This sets the role of the node
   role: plain
 
+  # This is only supported for the 'snarkWorker' role
+  replicas: 1
+
   image:
-    repository: mina-daemon
+    repository: minaprotocol/mina-daemon
     # This sets the pull policy for images.
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "0.0.1"
+    tag: "3.2.0-49b523c-bookworm-mainnet"
 
   # This sets the command to run in the container more information can be found here: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/
-  command: []
-    # - "echo"
-    # - "Hello, World!"
+  command:
+    - "echo"
+    - "Hello, World!"
 
   # This sets the arguments to run in the container more information can be found here: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/
   args: []
@@ -170,14 +179,17 @@ daemon:
   extraContainers:
     - name: mina-extra
       image:
-        repository: mina-extra
+        repository: minaprotocol/mina-daemon
         pullPolicy: IfNotPresent
-        tag: ""
+        tag: 3.2.0-49b523c-bookworm-mainnet
+      command:
+        - "echo"
+        - "Hello, World!"
 
 archive:
   # This enables the archive container configuration. It adds it as a container to the deployment.
   # Values not specified default to the daemon container values.
-  enable: true
+  enable: false
   # This sets the container image more information can be found here: https://kubernetes.io/docs/concepts/containers/images/
   name: mina-archive
   image:
@@ -187,6 +199,10 @@ archive:
 
 # This is for setting up a service more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/
 service:
+  # Enables the use of a service
+  enable: true
+  # Service annotations
+  annotations: {}
   # This sets the service type more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#publishing-services-service-types
   type: ClusterIP
   # This sets the ports more information can be found here: https://kubernetes.io/docs/concepts/services-networking/service/#field-spec-ports
@@ -201,18 +217,22 @@ service:
     protocol: TCP
     name: https
 
-extraServices:
-- name: https
-  type: ClusterIP
-  ports:
-    - port: 443
-      targetPort: https
-      protocol: TCP
-      name: https
+extraServices: []
+# - name: https
+#   type: ClusterIP
+#   annotations: {}
+#   labels: {}
+#   skipSelectorLabels: true
+#   selector: {}
+#   ports:
+#     - port: 443
+#       targetPort: https
+#       protocol: TCP
+#       name: https
 
 # This block is for setting up the ingress for more information can be found here: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
-  enable: true
+  enable: false
   className: ""
   annotations: {}
     # kubernetes.io/ingress.class: nginx
@@ -222,22 +242,44 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-          service:
-            name: mina-daemon
-            port:
-              number: 3085
-              name: graphql-port
-  tls:
-  - secretName: chart-example-tls
-    hosts:
-      - chart-example.local
+          # service:
+          #   name: mina-daemon
+          #   port:
+          #     number: 3085
+          #     name: graphql-port
+  tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+# This is for setting up the extra ingress
+extraIngress: []
+# - name: extra-ingress
+#   ingressClassName: "nginx"
+#   annotations: {}
+#     # kubernetes.io/ingress.class: nginx
+#     # kubernetes.io/tls-acme: "true"
+#   hosts:
+#     - host: chart-example.local
+#       paths:
+#         - path: /
+#           pathType: Prefix
+#           # service:
+#           #   name: mina-daemon
+#           #   port:
+#           #     number: 3085
+#           #     name: graphql-port
+#   tls: []
+#   #  - secretName: chart-example-tls
+#   #    hosts:
+#   #      - chart-example.local
 
 # Additional volumes on the output Deployment definition.
-volumes:
-- name: foo
-  secret:
-    secretName: mysecret
-    optional: false
+volumes: []
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
 
 # This is for setting up the extra volumes
 extraVolumes: []
@@ -259,3 +301,7 @@ tolerations: []
 
 # This is for setting up the affinity more information can be found here: https://kubernetes.io/docs/concepts/scheduling-eviction/assign-pod-node/#affinity-and-anti-affinity
 affinity: {}
+
+# This will load postgresql as dependency chart.
+postgresql:
+  enable: false
