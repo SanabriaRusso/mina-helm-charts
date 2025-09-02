@@ -40,11 +40,7 @@ helm.sh/chart: {{ include "mina-standard-daemon.chart" . }}
 app.kubernetes.io/version: {{ .Chart.AppVersion | quote }}
 {{- end }}
 app.kubernetes.io/managed-by: {{ .Release.Service }}
-{{/* 
-  Labels below are added to keep backwards compatibility 
-*/}}
 app: {{ .Release.Name }}
-version: {{ trunc 6 (.Values.daemon.image.tag) | trimSuffix "-" | trimSuffix "." }}
 role: {{ .Values.daemon.role}}
 testnet: {{ .Values.daemon.network }}
 {{- end }}
