@@ -92,7 +92,7 @@ daemon:
     # This sets the pull policy for images.
     pullPolicy: IfNotPresent
     # Overrides the image tag whose default is the chart appVersion.
-    tag: "3.2.0-49b523c-bookworm-mainnet"
+    tag: "3.2.0-97ad487-bookworm-mainnet"
 
   # This sets the command to run in the container more information can be found here: https://kubernetes.io/docs/tasks/inject-data-application/define-command-argument-container/
   command: []
