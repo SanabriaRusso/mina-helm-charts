@@ -1,7 +1,9 @@
 # Mina Daemon Chart
 
 > **Note**: This chart is forked from o1Labs' mina-standard-daemon chart and has been generalized for community use.
+
 ## Overview
+
 This Chart transforms a baseline Helm Chart by adding Mina daemon-specific fields and custom Library Functions.
 
 It keeps fields as configurable as possible; leaving space for Type testing. But relevantly, it allows great flexibility, which is exploited by other APIs/Charts to perform complex configurations from different `values.yaml` particular to different Mina Nodes.
@@ -11,12 +13,15 @@ The inspiration are Bitnami Charts, which provide a solid baseline rooted on the
 - **Extendable**: other Charts may use this as baseline and provide their own set of Libraries or Values to yield a particular configuration.
 - **Ready to go**: as we keep using the same tooling (i.e., Helm and `helmfile`), we can progressively roll-out when releases are ready.
 
+> **Key Takeaway**: **Mina Daemon Chart is a Helm Chart** that "higher-level" abstractions (such as other `helmfiles`, like [mina-node-orchestrator](../mina-node-orchestrator/README.md)) use as baseline Chart to produce Mina Node Kubernetes Manifests using comprehensible defaults and bespoke templates.
+
 ## Architecture
 `helmfile` is a tool that allow us to transform the *Values* we provide to Helm Charts, easing configuration and deployment management. This is achieved via complimentary template functions and deployment control (e.g., via `needs` to create DAG deployments), effectively acting as an Umbrella Configuration Manager, or **Orchestrator**.
 
 Helm Charts are the final "engine" producing Kubernetes Manifests. These use *Values* provided upstream (e.g., via a file, or via `helmfile`) to fill a set of *Helm Templates*.
 
 **Mina Daemon Chart is a Helm Chart** that "higher-level" abstactions (such as other `helmfiles`, like [mina-node-orchestrator](../mina-node-orchestrator/README.md)) use as baseline Chart to produce Mina Node Kubernetes Manifests using comprehensible defaults and bespoke templates.
+
 
 ### A layered approach
 The figure below provides a high-level overview of the layered approach used to effectively produce Mina nodes Kubernetes Manifests using Helm and `helmfile`.
