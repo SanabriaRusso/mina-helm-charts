@@ -16,8 +16,6 @@ Referring to the [proposed architecture](../mina-daemon-chart/README.md) (see fi
 - `templates/`: another collection of Helm Template functions, these ones are invoked per-release in `helmfile.yaml` (i.e., the Orchestration file) and are responsible shaping values for the downstream Chart.
 - `helmfile.yaml`: the **Orchestration file**. It essentially loads the environment definition (i.e., `environment/defaults.yaml`) and generates `helmfile` releases for each `.Values.nodes` defined.
 
-## Orchestration-level Charts
-[Orchestration Charts](../toolkit/mina-standard-orchestrator/) may simply call this one and provide at set of over-writing `values.yaml`. [`mina-standard-orchestrator`](../toolkit/mina-standard-orchestrator/) is a demonstration on how users can modify the defaults provided at Node level.
 
 ## Configuration Parameters
 
