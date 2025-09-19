@@ -286,3 +286,12 @@ affinity: {}
 # This will load postgresql as dependency chart.
 postgresql:
   enable: false
+  global:
+    security:
+      allowInsecureImages: true
+  image:
+    registry: asia-northeast3-docker.pkg.dev/o1labs-192920
+    repository: gitops-images/postgresql
+    tag: 17.2.0-debian-12-r10
+    pullPolicy: IfNotPresent
+    digest: "sha256:7f31717f9c040abc7a0a92b29281c4cae1f03619aeead2c13ee95f667c9256e5"
