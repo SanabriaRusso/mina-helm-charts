@@ -170,6 +170,29 @@ secrets: []
 
 
 {{/*
+  "mina-standard-node.standard.env": provides a list of environment variables.
+  This is used on roles that do not require particular daemon configurations, e.g., rosetta
+*/}}
+{{- define "mina-standard-node.standard.env" -}}
+{{- $root := .root.Values }}
+{{- $env := merge .node.values.daemon.env $root.common.daemon.env }}
+{{- range $key, $val := $env }}
+- name: {{ $key }}
+  value: {{ $val | quote }}
+{{- end }}
+{{/* Adding envs from existing Secrets */}}
+{{- $envFromSecretList := concat $root.common.daemon.envFromSecret .node.values.daemon.envFromSecret }}
+{{- range $envFromSecretList }}
+- name: {{ .name }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .secretKeyRef.name }}
+      key: {{ .secretKeyRef.key }}
+{{- end }}
+{{- end -}}
+
+
+{{/*
   "mina-standard-node.plain.volumes": provides a list of required volumes.
 */}}
 {{- define "mina-standard-node.plain.volumes" -}}
