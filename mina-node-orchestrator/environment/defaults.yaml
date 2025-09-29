@@ -1041,6 +1041,7 @@ defaults:
             memory: 6Gi
         readinessProbe: null
         livenessProbe: null
+      volumes: []
       tolerations: []
         # - effect: NoSchedule
         #   key: node-role.minaprotocol.org/itn-testbed
@@ -1106,27 +1107,3 @@ nodes:
         #         },
         #         ...
         #       }
-  rosetta:
-    enable: false
-    role: rosetta
-    name: standard-rosetta
-    values:
-      ingress:
-        enable: false
-      daemon:
-        image:
-          repository: minaprotocol/mina-rosetta
-          tag: latest
-        resources:
-          requests:
-            cpu: "2"
-            memory: 4Gi
-          limits:
-            cpu: "4"
-            memory: 6Gi
-        init:
-          enable: false
-        persistence:
-          enable: false
-        readinessProbe: null
-        livenessProbe: null
