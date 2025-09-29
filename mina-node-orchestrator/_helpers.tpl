@@ -98,8 +98,13 @@ secrets: []
 {{- if hasKey (((.node.values.daemon.init).genesis).secret) "key" -}}
 {{- $genesisFile = (printf "%s" .node.values.daemon.init.genesis.secret.key) }}
 {{- end }}
+{{- if eq (printf "%v" (.node.values.daemon.init.genesis).fromValue) "true" }}
+{{- $genesisFile = .node.values.daemon.init.genesis.value.filename }}
+{{- end }}
+{{- if eq (printf "%v" .node.values.daemon.init.genesis.skip) "false" }}
 - -config-file
 - /root/.mina-config/{{ $genesisFile }}
+{{- end }}
 {{- end }}
 {{- range .node.values.daemon.extraArgs }}
 - {{ . | quote }}
@@ -193,6 +198,15 @@ secrets: []
     secretName: {{ .genesis.secret.name }}
     defaultMode: 0644
 {{- end }}
+{{- if .genesis.fromValue }}
+- name: genesis-inline-config
+  configMap:
+    name: {{ printf "%s-genesis-config" $.node.name }}
+    defaultMode: 0644
+    items:
+    - key: {{ .genesis.value.filename }}
+      path: {{ .genesis.value.filename }}
+{{- end }}
 {{- if .libp2pKeys.fromSecret }}
 - name: libp2p-keys
   secret:
@@ -284,6 +298,7 @@ secrets: []
       /bin/chmod -R 0777 /root/.mina-config
 
       cp /root/genesis/* /root/.mina-config/ || true;
+      cp /root/genesis-inline/* /root/.mina-config/ || true;
   volumeMounts:
   - name: wallet-keys
     mountPath: /root/wallet-keys
@@ -292,6 +307,11 @@ secrets: []
   {{- if .node.values.daemon.init.genesis.fromSecret }}
   - name: {{ .node.values.daemon.init.genesis.secret.name }}
     mountPath: /root/genesis
+    readOnly: true
+  {{- end }}
+  {{- if .node.values.daemon.init.genesis.fromValue }}
+  - name: genesis-inline-config
+    mountPath: /root/genesis-inline
     readOnly: true
   {{- end }}
   {{- if .node.values.daemon.init.keys.fromSecret }}
@@ -477,5 +497,65 @@ annotations:
 {{- end }}
 storageClassName: {{ $persistence.claim.storageClassName }}
 size: {{ $persistence.claim.size }}
+{{- end }}
+{{- end -}}
+
+
+{{/*
+  "mina-standard-node.rosetta.ports": merges common and per-node ports, outputs
+  list of values.
+*/}}
+{{- define "mina-standard-node.rosetta.ports" -}}
+{{- $root := .root.Values }}
+{{- $ports := .node.values.daemon.ports }}
+{{- range $key, $val := $ports }}
+{{ toYaml ($val | list) }}
+{{- end }}
+{{- end -}}
+
+
+{{/*
+  "mina-standard-node.rosetta.service": provides the service definition.
+  Services are created according to defined ports. Default port is rosetta.
+  Others are added as externalPorts.
+*/}}
+{{- define "mina-standard-node.rosetta.service" -}}
+{{- $root := .root.Values }}
+{{- $ports := .node.values.daemon.ports }}
+{{- $serviceType := "ClusterIP" }}
+{{- $annotations := dict }}
+{{- if hasKey .node.values.daemon "service" }}
+{{- with .node.values.daemon.service }}
+{{- if hasKey . "type" }}
+{{- $serviceType = .type }}
+{{- end }}
+{{- if hasKey . "annotations" }}
+{{- $annotations = .annotations }}
+{{- end }}
+{{- end }}
+{{- end }}
+enable: {{ if hasKey . "enable" }}{{ . }}{{ else }}true{{ end }}
+type: {{ $serviceType }}
+annotations:
+  {{- toYaml $annotations | nindent 2 }}
+{{- $rosettaPort := index $ports "rosetta" }}
+{{- if $rosettaPort }}
+port: {{ $rosettaPort.containerPort }}
+targetPort: {{ $rosettaPort.name }}
+protocol: {{ $rosettaPort.protocol }}
+{{- $extraPorts := omit $ports "rosetta" }}
+extraPorts:
+{{- range $key, $val := $extraPorts }}
+- name: {{ $val.name }}
+  annotations:
+    {{- if hasKey $val "annotations" }}
+    {{- toYaml $val.annotations | nindent 4 }}
+    {{- end }}
+  port: {{ $val.containerPort }}
+  targetPort: {{ $val.name }}
+  protocol: {{ $val.protocol }}
+{{- end }}
+{{- else }}
+{{- fail "Rosetta port configuration is required for rosetta service" }}
 {{- end }}
 {{- end -}}

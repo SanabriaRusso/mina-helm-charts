@@ -1,0 +1,89 @@
+{{/*
+ Override default values for mina-standard-daemon here
+*/}}
+fullnameOverride: {{ required "Node name is required" .node.name }}
+strategy:
+  type: Recreate
+podAnnotations: {}
+podLabels:
+  role: {{ required "Node role is required" .node.role }}
+
+ingress:
+{{- toYaml .node.values.ingress | nindent 2 }}
+
+{{- if hasKey .node.values "extraIngress" }}
+extraIngress:
+{{- toYaml .node.values.extraIngress | nindent 2 }}
+{{- end }}
+
+secrets:
+{{- include "mina-standard-node.plain.secrets" . | indent 2 }}
+
+service:
+{{- include "mina-standard-node.rosetta.service" . | indent 2 }}
+
+{{- if hasKey .node.values "extraServices" }}
+extraServices:
+{{- toYaml .node.values.extraServices | nindent 2 }}
+{{- end }}
+
+daemon:
+  name: {{ required "Node name is required" .node.name }}
+  network: {{ include "mina-standard-node.plain.network" . }}
+  role: {{ required "Node role is required" .node.role }}
+  image:
+    {{- toYaml .node.values.daemon.image | nindent 4 }}
+  command:
+  {{- if hasKey .node.values.daemon "command" }}
+  {{- toYaml .node.values.daemon.command | nindent 4 }}
+  {{- else }}
+    - /bin/bash
+    - -c
+  {{- end }}
+  args:
+  {{- if hasKey .node.values.daemon "args" }}
+  {{- range .node.values.daemon.args }}
+    - {{ . | toString | quote }}
+  {{- end }}
+  {{- else }}
+    - |
+
+      set -euo pipefail
+
+      /etc/mina/rosetta/scripts/docker-standalone-start.sh --help
+  {{- end }}
+  extraArgs:
+  {{- range .node.values.daemon.extraArgs }}
+    - {{ . | quote }}
+  {{- end }}
+  env:
+  {{ include "mina-standard-node.standard.env" . | indent 4 }}
+  ports:
+  {{ include "mina-standard-node.rosetta.ports" . | indent 4 }}
+  resources:
+  {{- toYaml .node.values.daemon.resources | nindent 4 }}
+  livenessProbe:
+  {{- if hasKey .node.values.daemon "livenessProbe" }}
+    {{- toYaml .node.values.daemon.livenessProbe | nindent 4 }}
+  {{- end }}
+  readinessProbe:
+  {{- if hasKey .node.values.daemon "readinessProbe" }}
+    {{- toYaml .node.values.daemon.readinessProbe | nindent 4 }}
+  {{- end }}
+  volumeMounts:
+  {{- with .node.values.daemon.volumeMounts }}
+    {{ toYaml . }}
+  {{- end }}
+volumes:
+{{- with .node.values.volumes }}
+  {{ toYaml . }}
+{{- end }}
+
+persistentVolumeClaim:
+{{ include "mina-standard-node.plain.persistentVolumeClaim" . | indent 2 }}
+
+tolerations:
+{{ include "mina-standard-node.plain.tolerations" . | indent 2 }}
+
+affinity:
+{{ include "mina-standard-node.plain.affinity" . | indent 2 }}
