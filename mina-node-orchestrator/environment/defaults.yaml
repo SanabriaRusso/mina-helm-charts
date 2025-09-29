@@ -180,6 +180,7 @@ defaults:
             secret:
               name: mina-libp2p-keys
           genesis: # fetch genesis ledger
+            skip: false
             fromSecret: false
             secret:
               name: a-secret
@@ -274,6 +275,7 @@ defaults:
             secret:
               name: mina-libp2p-keys
           genesis: # fetch genesis ledger
+            skip: false
             fromSecret: false
             secret:
               name: a-secret
@@ -358,6 +360,7 @@ defaults:
             secret:
               name: mina-libp2p-keys
           genesis: # fetch genesis ledger
+            skip: false
             fromSecret: false
             secret:
               name: a-secret
@@ -558,6 +561,7 @@ defaults:
             secret:
               name: mina-libp2p-keys
           genesis: # fetch genesis ledger
+            skip: false
             fromSecret: false
             secret:
               name: a-secret
@@ -651,6 +655,7 @@ defaults:
             secret:
               name: mina-libp2p-keys
           genesis: # fetch genesis ledger
+            skip: false
             fromSecret: false
             secret:
               name: a-secret

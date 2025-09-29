@@ -98,8 +98,10 @@ secrets: []
 {{- if hasKey (((.node.values.daemon.init).genesis).secret) "key" -}}
 {{- $genesisFile = (printf "%s" .node.values.daemon.init.genesis.secret.key) }}
 {{- end }}
+{{- if eq (printf "%v" .node.values.daemon.init.genesis.skip) "false" }}
 - -config-file
 - /root/.mina-config/{{ $genesisFile }}
+{{- end }}
 {{- end }}
 {{- range .node.values.daemon.extraArgs }}
 - {{ . | quote }}
