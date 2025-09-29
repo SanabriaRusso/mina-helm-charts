@@ -98,9 +98,6 @@ secrets: []
 {{- if hasKey (((.node.values.daemon.init).genesis).secret) "key" -}}
 {{- $genesisFile = (printf "%s" .node.values.daemon.init.genesis.secret.key) }}
 {{- end }}
-{{- if eq (printf "%v" (.node.values.daemon.init.genesis).fromValue) "true" }}
-{{- $genesisFile = .node.values.daemon.init.genesis.value.filename }}
-{{- end }}
 {{- if eq (printf "%v" .node.values.daemon.init.genesis.skip) "false" }}
 - -config-file
 - /root/.mina-config/{{ $genesisFile }}
