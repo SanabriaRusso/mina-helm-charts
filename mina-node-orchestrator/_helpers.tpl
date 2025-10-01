@@ -522,8 +522,19 @@ size: {{ $persistence.claim.size }}
 
 
 {{/*
-  "mina-standard-node.rosetta.ports": merges common and per-node ports, outputs
-  list of values.
+  "mina-standard-node.standard.ports": merges common and per-node ports, outputs list of values.
+*/}}
+{{- define "mina-standard-node.standard.ports" -}}
+{{- $root := .root.Values }}
+{{- $ports := .node.values.daemon.ports }}
+{{- range $key, $val := $ports }}
+{{ toYaml ($val | list) }}
+{{- end }}
+{{- end -}}
+
+
+{{/*
+  "mina-standard-node.rosetta.ports": merges common and per-node ports, outputs list of values.
 */}}
 {{- define "mina-standard-node.rosetta.ports" -}}
 {{- $root := .root.Values }}
