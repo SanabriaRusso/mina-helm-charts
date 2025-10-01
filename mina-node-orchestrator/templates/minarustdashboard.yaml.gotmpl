@@ -9,7 +9,9 @@ podLabels:
   role: {{ required "Node role is required" .node.role }}
 
 ingress:
+{{- if and (hasKey .node.values "ingress") (eq (printf "%v" .node.values.ingress.enable) "true") }}
 {{- toYaml .node.values.ingress | nindent 2 }}
+{{- end }}
 
 {{- if hasKey .node.values "extraIngress" }}
 extraIngress:
@@ -52,9 +54,9 @@ daemon:
   {{- end }}
   {{- end }}
   env:
-  {{ include "mina-standard-node.plain.env" . | indent 4 }}
+  {{ include "mina-standard-node.standard.env" . | indent 4 }}
   ports:
-  {{ include "mina-standard-node.plain.ports" . | indent 4 }}
+  {{ include "mina-standard-node.standard.ports" . | indent 4 }}
   resources:
   {{- toYaml .node.values.daemon.resources | nindent 4 }}
   livenessProbe:
@@ -83,11 +85,7 @@ daemon:
       command:
       - /bin/bash
       - -c
-      {{- if ne .node.role "archive" }}
-      - 'source /healthcheck/utilities.sh && updateSyncStatusLabel {{ required "Node name is required" .node.name }} && isDaemonSynced'
-      {{- else }}
-      - echo "Archive node does not have a readiness probe"
-      {{- end }}
+      - echo "Node does not have a readiness probe"
   {{- end }}
   volumeMounts:
   {{- if hasKey .node.values.daemon "volumeMounts" }}

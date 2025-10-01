@@ -911,12 +911,7 @@ defaults:
           external:
             name: external-port
             protocol: TCP
-            containerPort: 3000
-            hostPort: 3000
-          libp2p:
-            name: libp2p-port
-            protocol: TCP
-            containerPort: 8302
+            containerPort: 4200
         ## Required Environment variables for the daemon
         ## NOTE: as with ports, these are specified as a map for easy reference in templates.
         env: {}
@@ -942,6 +937,8 @@ defaults:
         ## Service configuration (empty by default)
         service:
           type: "ClusterIP"
+          port: 4200
+          targetPort: 4200
           annotations: {}
         ## Probe configurations (empty by default)
         livenessProbe: {}
