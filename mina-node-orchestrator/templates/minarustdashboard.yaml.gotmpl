@@ -1,31 +1,121 @@
+{{/*
+ Override default values for mina-standard-daemon here
+*/}}
+fullnameOverride: {{ required "Node name is required" .node.name }}
+strategy:
+  type: Recreate
+podAnnotations: {}
+podLabels:
+  role: {{ required "Node role is required" .node.role }}
+
+ingress:
+{{- toYaml .node.values.ingress | nindent 2 }}
+
+{{- if hasKey .node.values "extraIngress" }}
+extraIngress:
+{{- toYaml .node.values.extraIngress | nindent 2 }}
+{{- end }}
+
+secrets:
+{{- include "mina-standard-node.plain.secrets" . | indent 2 }}
+
+service:
+{{- include "mina-standard-node.plain.service" . | indent 2 }}
+
+{{- if hasKey .node.values "extraServices" }}
+extraServices:
+{{- toYaml .node.values.extraServices | nindent 2 }}
+{{- end }}
+
+initContainers:
+{{ include "mina-standard-node.plain.initContainers" . | indent 2 }}
+
+{{- if hasKey .node.values "extraInitContainers" }}
+extraInitContainers:
+{{- toYaml .node.values.extraInitContainers | nindent 2 }}
+{{- end }}
+
 daemon:
+  name: {{ required "Node name is required" .node.name }}
+  network: {{ include "mina-standard-node.plain.network" . }}
+  role: {{ required "Node role is required" .node.role }}
+  image:
+  {{ include "mina-standard-node.plain.image" . | indent 4 }}
+  {{- if hasKey .node.values.daemon "command" }}
   command:
-  {{- if .node.values.daemon.command }}
   {{- toYaml .node.values.daemon.command | nindent 4 }}
   {{- end }}
   args:
   {{- if and (hasKey .node.values.daemon "args") (.node.values.daemon.args) }}
   {{- range .node.values.daemon.args }}
-    - {{ . | quote }}
+    - {{ . | toString | quote }}
   {{- end }}
   {{- end }}
-  extraArgs:
-  {{- range .node.values.daemon.extraArgs }}
-    - {{ . | quote }}
-  {{- end }}
+  env:
+  {{ include "mina-standard-node.plain.env" . | indent 4 }}
+  ports:
+  {{ include "mina-standard-node.plain.ports" . | indent 4 }}
+  resources:
+  {{- toYaml .node.values.daemon.resources | nindent 4 }}
   livenessProbe:
-  {{- if hasKey .node.values.daemon "livenessProbe" }}
+  {{- if and (hasKey .node.values.daemon "livenessProbe") .node.values.daemon.livenessProbe }}
     {{- toYaml .node.values.daemon.livenessProbe | nindent 4 }}
+  {{- else }}
+    failureThreshold: 10
+    initialDelaySeconds: 300
+    periodSeconds: 60
+    successThreshold: 1
+    terminationGracePeriodSeconds: 10
+    tcpSocket:
+      port: external-port
+    timeoutSeconds: 5
   {{- end }}
   readinessProbe:
-  {{- if hasKey .node.values.daemon "readinessProbe" }}
+  {{- if and (hasKey .node.values.daemon "readinessProbe") .node.values.daemon.readinessProbe }}
     {{- toYaml .node.values.daemon.readinessProbe | nindent 4 }}
+  {{- else }}
+    failureThreshold: 10
+    initialDelaySeconds: {{ (eq .node.role "archive") | ternary 10 300 }} {{/* Archive nodes have a shorter initial delay */}}
+    periodSeconds: {{ (eq .node.role "archive") | ternary 10 60 }} {{/* Archive nodes have a shorter check periods */}}
+    successThreshold: 1
+    timeoutSeconds: 5
+    exec:
+      command:
+      - /bin/bash
+      - -c
+      {{- if ne .node.role "archive" }}
+      - 'source /healthcheck/utilities.sh && updateSyncStatusLabel {{ required "Node name is required" .node.name }} && isDaemonSynced'
+      {{- else }}
+      - echo "Archive node does not have a readiness probe"
+      {{- end }}
   {{- end }}
   volumeMounts:
+  {{- if hasKey .node.values.daemon "volumeMounts" }}
   {{- toYaml .node.values.daemon.volumeMounts | nindent 4 }}
-  {{- if hasKey .node.values.daemon "extraVolumeMounts" }}
-  extraVolumeMounts:
-  {{- toYaml .node.values.daemon.extraVolumeMounts | nindent 4 }}
   {{- end }}
+
+  {{- if hasKey .node.values.daemon "extraContainers" }}
+  extraContainers:
+  {{- range .node.values.daemon.extraContainers }}
+    {{- toYaml (. | list) | nindent 4 }}
+  {{- end -}}
+  {{- end }}
+
 volumes:
-  {{- toYaml .node.values.daemon.volumes | nindent 4 }}  
+{{- if hasKey .node.values "volumes" }}
+{{- toYaml .node.values.volumes | nindent 2 }}
+{{- end }}
+
+{{- if hasKey .node.values "extraVolumes" }}
+extraVolumes:
+{{- toYaml .node.values.extraVolumes | nindent 2 }}
+{{- end }}
+
+persistentVolumeClaim:
+{{ include "mina-standard-node.plain.persistentVolumeClaim" . | indent 2 }}
+
+tolerations:
+{{ include "mina-standard-node.plain.tolerations" . | indent 2 }}
+
+affinity:
+{{ include "mina-standard-node.plain.affinity" . | indent 2 }}
