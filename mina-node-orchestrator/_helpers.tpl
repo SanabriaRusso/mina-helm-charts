@@ -590,3 +590,260 @@ extraPorts:
 {{- fail "Rosetta port configuration is required for rosetta service" }}
 {{- end }}
 {{- end -}}
+
+
+{{/*
+  "mina-standard-node.minarustbp.initContainers": Init container for producer key generation
+*/}}
+{{- define "mina-standard-node.minarustbp.initContainers" -}}
+{{- if .node.values.daemon.init.enable }}
+{{- if .node.values.daemon.init.producerKey.generate }}
+- name: generate-producer-key
+  image:
+  {{- $imageObj := .root.Values.common.daemon.image }}
+  {{- if and (hasKey .node.values.daemon "image") (.node.values.daemon.image) }}
+  {{- $imageObj = .node.values.daemon.image }}
+  {{- end }}
+  {{- toYaml $imageObj | nindent 4 }}
+  command: ["bash", "-c"]
+  args:
+    - |
+      #!/usr/bin/env bash
+
+      set -euo pipefail
+
+      echo "Setting up producer key..."
+
+      {{- if .node.values.daemon.persistence.enable }}
+      # With persistence: store keys in /data/keys/ and copy to runtime location
+      PERSISTENT_KEY_DIR="/data/keys"
+      PERSISTENT_KEY_PATH="$PERSISTENT_KEY_DIR/producer-key"
+      RUNTIME_KEY_DIR="/root/.mina"
+      RUNTIME_KEY_PATH="$RUNTIME_KEY_DIR/producer-key"
+
+      mkdir -p "$PERSISTENT_KEY_DIR"
+      mkdir -p "$RUNTIME_KEY_DIR"
+
+      {{- if .node.values.daemon.init.producerKey.fromSecret }}
+      # Copy producer key from secret to persistent storage
+      if [ -f /producer-key-secret/key ]; then
+        echo "Copying producer key from secret to persistent storage..."
+        cp /producer-key-secret/key "$PERSISTENT_KEY_PATH"
+      else
+        echo "Error: Producer key not found in secret"
+        exit 1
+      fi
+      {{- else }}
+      # Check if key already exists in persistent storage
+      if [ -f "$PERSISTENT_KEY_PATH" ]; then
+        echo "Producer key already exists in persistent storage, reusing..."
+      else
+        # Generate new producer key in persistent storage
+        echo "Generating new producer key in persistent storage..."
+        mina misc mina-encrypted-key "$MINA_PRIVKEY_PASS" --file "$PERSISTENT_KEY_PATH"
+        echo "Producer key generated successfully"
+      fi
+      {{- end }}
+
+      # Copy key from persistent storage to runtime location
+      echo "Copying producer key to runtime location..."
+      cp "$PERSISTENT_KEY_PATH" "$RUNTIME_KEY_PATH"
+      chmod 600 "$RUNTIME_KEY_PATH"
+      echo "Producer key copied: $PERSISTENT_KEY_PATH -> $RUNTIME_KEY_PATH"
+
+      {{- else }}
+      # Without persistence: generate directly in /root/.mina/
+      mkdir -p /root/.mina
+
+      {{- if .node.values.daemon.init.producerKey.fromSecret }}
+      # Copy producer key from secret
+      if [ -f /producer-key-secret/key ]; then
+        echo "Copying producer key from secret..."
+        cp /producer-key-secret/key /root/.mina/producer-key
+        chmod 600 /root/.mina/producer-key
+      else
+        echo "Error: Producer key not found in secret"
+        exit 1
+      fi
+      {{- else }}
+      # Generate new producer key (ephemeral)
+      echo "Generating new producer key (ephemeral)..."
+      mina misc mina-encrypted-key "$MINA_PRIVKEY_PASS" --file /root/.mina/producer-key
+      echo "Producer key generated successfully"
+      {{- end }}
+      {{- end }}
+
+      # List generated keys for verification
+      ls -lh /root/.mina/
+      {{- if .node.values.daemon.persistence.enable }}
+      ls -lh /data/keys/
+      {{- end }}
+  volumeMounts:
+  {{- if .node.values.daemon.persistence.enable }}
+  - name: config-dir
+    mountPath: /data
+  {{- else }}
+  - name: mina-keys
+    mountPath: /root/.mina
+  {{- end }}
+  {{- if .node.values.daemon.init.producerKey.fromSecret }}
+  - name: producer-key-secret
+    mountPath: /producer-key-secret
+    readOnly: true
+  {{- end }}
+  env:
+  - name: MINA_PRIVKEY_PASS
+    value: {{ .node.values.daemon.init.producerKey.password | quote }}
+  resources:
+    requests:
+      cpu: 300m
+      memory: 100Mi
+    limits:
+      cpu: 1
+      memory: 1Gi
+{{- end }}
+{{- end }}
+{{- end -}}
+
+
+{{/*
+  "mina-standard-node.minarustbp.volumes": Custom volumes for minarustbp role
+*/}}
+{{- define "mina-standard-node.minarustbp.volumes" -}}
+{{- if .node.values.daemon.init.enable }}
+{{- if .node.values.daemon.init.producerKey.generate }}
+{{- if not .node.values.daemon.persistence.enable }}
+{{/* Only use emptyDir for keys when persistence is disabled */}}
+- name: mina-keys
+  emptyDir: {}
+{{- end }}
+{{- if .node.values.daemon.init.producerKey.fromSecret }}
+- name: producer-key-secret
+  secret:
+    secretName: {{ .node.values.daemon.init.producerKey.secret.name }}
+    defaultMode: 0600
+    items:
+    - key: {{ .node.values.daemon.init.producerKey.secret.key }}
+      path: key
+{{- end }}
+{{- end }}
+{{- end }}
+{{/* Configuration directory - PVC or emptyDir */}}
+- name: config-dir
+{{- if .node.values.daemon.persistence.enable }}
+  persistentVolumeClaim:
+    claimName: {{ .node.name }}
+{{- else }}
+  emptyDir: {}
+{{- end }}
+{{/* Include common volumes */}}
+{{- with .root.Values.common.volumes }}
+{{ toYaml . }}
+{{- end }}
+{{/* Include daemon-specific volumes */}}
+{{- with .node.values.daemon.volumes }}
+{{ toYaml . }}
+{{- end }}
+{{- end -}}
+
+
+{{/*
+  "mina-standard-node.minarustbp.volumeMounts": Custom volume mounts for minarustbp role
+*/}}
+{{- define "mina-standard-node.minarustbp.volumeMounts" -}}
+{{- if .node.values.daemon.persistence.enable }}
+{{/* With persistence: mount PVC at /data for init, and /root/.mina for runtime keys */}}
+- mountPath: /data
+  name: config-dir
+- mountPath: /root/.mina
+  name: config-dir
+  subPath: keys
+- mountPath: /root/.mina-config/
+  name: config-dir
+  subPath: config
+{{- else }}
+{{/* Without persistence: separate mounts for keys and config */}}
+{{- if .node.values.daemon.init.enable }}
+{{- if .node.values.daemon.init.producerKey.generate }}
+- mountPath: /root/.mina
+  name: mina-keys
+{{- end }}
+{{- end }}
+- mountPath: /root/.mina-config/
+  name: config-dir
+{{- end }}
+{{- with .root.Values.common.daemon.volumeMounts }}
+{{ toYaml . }}
+{{- end }}
+{{- with .node.values.daemon.volumeMounts }}
+{{ toYaml . }}
+{{- end }}
+{{- end -}}
+
+
+{{/*
+  "mina-standard-node.minarustbp.ports": BP-specific port configuration
+*/}}
+{{- define "mina-standard-node.minarustbp.ports" -}}
+{{- $ports := .node.values.daemon.ports }}
+{{- range $key, $val := $ports }}
+{{ toYaml ($val | list) }}
+{{- end }}
+{{- end -}}
+
+
+{{/*
+  "mina-standard-node.minarustbp.service": BP-specific service configuration
+*/}}
+{{- define "mina-standard-node.minarustbp.service" -}}
+{{- $ports := .node.values.daemon.ports }}
+{{- $serviceType := "ClusterIP" }}
+{{- $annotations := dict }}
+{{- if hasKey .node.values.daemon "service" }}
+{{- with .node.values.daemon.service }}
+{{- if hasKey . "type" }}
+{{- $serviceType = .type }}
+{{- end }}
+{{- if hasKey . "annotations" }}
+{{- $annotations = .annotations }}
+{{- end }}
+{{- end }}
+{{- end }}
+enable: true
+type: {{ $serviceType }}
+annotations:
+  {{- toYaml $annotations | nindent 2 }}
+port: {{ $ports.external.containerPort }}
+targetPort: {{ $ports.external.name }}
+protocol: {{ $ports.external.protocol }}
+{{- $extraPorts := omit $ports "external" }}
+extraPorts:
+{{- range $key, $val := $extraPorts }}
+- name: {{ $val.name }}
+  port: {{ $val.containerPort }}
+  targetPort: {{ $val.name }}
+  protocol: {{ $val.protocol }}
+{{- end }}
+{{- end -}}
+
+
+{{/*
+  "mina-standard-node.minarustbp.env": Environment variables for minarustbp role
+*/}}
+{{- define "mina-standard-node.minarustbp.env" -}}
+{{- $root := .root.Values }}
+{{- $env := merge .node.values.daemon.env $root.common.daemon.env }}
+{{- range $key, $val := $env }}
+- name: {{ $key }}
+  value: {{ $val | quote }}
+{{- end }}
+{{/* Adding envs from existing Secrets */}}
+{{- $envFromSecretList := concat $root.common.daemon.envFromSecret .node.values.daemon.envFromSecret }}
+{{- range $envFromSecretList }}
+- name: {{ .name }}
+  valueFrom:
+    secretKeyRef:
+      name: {{ .secretKeyRef.name }}
+      key: {{ .secretKeyRef.key }}
+{{- end }}
+{{- end -}}
