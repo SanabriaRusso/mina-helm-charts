@@ -615,7 +615,7 @@ extraPorts:
       echo "Setting up producer key..."
 
       {{- if .node.values.daemon.persistence.enable }}
-      # With persistence: store keys in /data/keys/
+      # With persistence: store keys in /data/keys/ and copy to runtime location
       PERSISTENT_KEY_DIR="/data/keys"
       PERSISTENT_KEY_PATH="$PERSISTENT_KEY_DIR/producer-key"
       RUNTIME_KEY_DIR="/root/.mina"
@@ -642,13 +642,16 @@ extraPorts:
         # Generate new producer key in persistent storage
         echo "Generating new producer key in persistent storage..."
         mina misc mina-encrypted-key "$MINA_PRIVKEY_PASS" --file "$PERSISTENT_KEY_PATH"
+        chmod 600 "$PERSISTENT_KEY_PATH"
         echo "Producer key generated successfully"
       fi
       {{- end }}
 
-      # Create symlink from runtime location to persistent storage
-      ln -sf "$PERSISTENT_KEY_PATH" "$RUNTIME_KEY_PATH"
-      echo "Symlinked $RUNTIME_KEY_PATH -> $PERSISTENT_KEY_PATH"
+      # Copy key from persistent storage to runtime location
+      echo "Copying producer key to runtime location..."
+      cp "$PERSISTENT_KEY_PATH" "$RUNTIME_KEY_PATH"
+      chmod 600 "$RUNTIME_KEY_PATH"
+      echo "Producer key copied: $PERSISTENT_KEY_PATH -> $RUNTIME_KEY_PATH"
 
       {{- else }}
       # Without persistence: generate directly in /root/.mina/
@@ -751,9 +754,12 @@ extraPorts:
 */}}
 {{- define "mina-standard-node.minarustbp.volumeMounts" -}}
 {{- if .node.values.daemon.persistence.enable }}
-{{/* With persistence: mount PVC at /data for keys access */}}
+{{/* With persistence: mount PVC at /data for init, and /root/.mina for runtime keys */}}
 - mountPath: /data
   name: config-dir
+- mountPath: /root/.mina
+  name: config-dir
+  subPath: keys
 - mountPath: /root/.mina-config/
   name: config-dir
   subPath: config
