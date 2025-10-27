@@ -1253,9 +1253,35 @@ defaults:
         service:
           type: "ClusterIP"
           annotations: {}
-        ## Probe configurations (empty by default)
-        livenessProbe: {}
-        readinessProbe: {}
+        ## Probe configurations
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - echo "I'm alive"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          failureThreshold: 10
+          periodSeconds: 60
+          initialDelaySeconds: 200
+          timeoutSeconds: 5
+          exec:
+            command:
+              - sh
+              - -c
+              - |
+                RESPONSE=$(curl -s -X POST http://localhost:3000/graphql -H "Content-Type: application/json" -d '{"query": "{ syncStatus }"}')
+                STATUS=$(echo "$RESPONSE" | jq -r '.data.syncStatus')
+                if [ "$STATUS" = "SYNCED" ]; then
+                  exit 0
+                else
+                  echo "Readiness probe failed: syncStatus is $STATUS"
+                  exit 1
+                fi
         ## Volume mounts (empty by default)
         volumeMounts: []
         extraVolumeMounts: []
