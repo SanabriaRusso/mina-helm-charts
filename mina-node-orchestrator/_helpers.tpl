@@ -641,7 +641,7 @@ extraPorts:
       else
         # Generate new producer key in persistent storage
         echo "Generating new producer key in persistent storage..."
-        misc mina-encrypted-key "$MINA_PRIVKEY_PASS" --file "$PERSISTENT_KEY_PATH"
+        mina misc mina-encrypted-key "$MINA_PRIVKEY_PASS" --file "$PERSISTENT_KEY_PATH"
         echo "Producer key generated successfully"
       fi
       {{- end }}
@@ -667,7 +667,7 @@ extraPorts:
       {{- else }}
       # Generate new producer key (ephemeral)
       echo "Generating new producer key (ephemeral)..."
-      misc mina-encrypted-key "$MINA_PRIVKEY_PASS" --file /root/.mina/producer-key
+      mina misc mina-encrypted-key "$MINA_PRIVKEY_PASS" --file /root/.mina/producer-key
       echo "Producer key generated successfully"
       {{- end }}
       {{- end }}
