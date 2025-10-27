@@ -629,7 +629,6 @@ extraPorts:
       if [ -f /producer-key-secret/key ]; then
         echo "Copying producer key from secret to persistent storage..."
         cp /producer-key-secret/key "$PERSISTENT_KEY_PATH"
-        chmod 600 "$PERSISTENT_KEY_PATH"
       else
         echo "Error: Producer key not found in secret"
         exit 1
@@ -642,7 +641,6 @@ extraPorts:
         # Generate new producer key in persistent storage
         echo "Generating new producer key in persistent storage..."
         mina misc mina-encrypted-key "$MINA_PRIVKEY_PASS" --file "$PERSISTENT_KEY_PATH"
-        chmod 600 "$PERSISTENT_KEY_PATH"
         echo "Producer key generated successfully"
       fi
       {{- end }}
