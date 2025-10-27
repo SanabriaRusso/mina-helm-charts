@@ -612,9 +612,46 @@ extraPorts:
 
       set -euo pipefail
 
-      echo "Generating producer key..."
+      echo "Setting up producer key..."
 
-      # Create .mina directory if it doesn't exist
+      {{- if .node.values.daemon.persistence.enable }}
+      # With persistence: store keys in /data/keys/
+      PERSISTENT_KEY_DIR="/data/keys"
+      PERSISTENT_KEY_PATH="$PERSISTENT_KEY_DIR/producer-key"
+      RUNTIME_KEY_DIR="/root/.mina"
+      RUNTIME_KEY_PATH="$RUNTIME_KEY_DIR/producer-key"
+
+      mkdir -p "$PERSISTENT_KEY_DIR"
+      mkdir -p "$RUNTIME_KEY_DIR"
+
+      {{- if .node.values.daemon.init.producerKey.fromSecret }}
+      # Copy producer key from secret to persistent storage
+      if [ -f /producer-key-secret/key ]; then
+        echo "Copying producer key from secret to persistent storage..."
+        cp /producer-key-secret/key "$PERSISTENT_KEY_PATH"
+        chmod 600 "$PERSISTENT_KEY_PATH"
+      else
+        echo "Error: Producer key not found in secret"
+        exit 1
+      fi
+      {{- else }}
+      # Check if key already exists in persistent storage
+      if [ -f "$PERSISTENT_KEY_PATH" ]; then
+        echo "Producer key already exists in persistent storage, reusing..."
+      else
+        # Generate new producer key in persistent storage
+        echo "Generating new producer key in persistent storage..."
+        misc mina-encrypted-key "$MINA_PRIVKEY_PASS" --file "$PERSISTENT_KEY_PATH"
+        echo "Producer key generated successfully"
+      fi
+      {{- end }}
+
+      # Create symlink from runtime location to persistent storage
+      ln -sf "$PERSISTENT_KEY_PATH" "$RUNTIME_KEY_PATH"
+      echo "Symlinked $RUNTIME_KEY_PATH -> $PERSISTENT_KEY_PATH"
+
+      {{- else }}
+      # Without persistence: generate directly in /root/.mina/
       mkdir -p /root/.mina
 
       {{- if .node.values.daemon.init.producerKey.fromSecret }}
@@ -628,18 +665,26 @@ extraPorts:
         exit 1
       fi
       {{- else }}
-      # Generate new producer key
-      echo "Generating new producer key..."
+      # Generate new producer key (ephemeral)
+      echo "Generating new producer key (ephemeral)..."
       misc mina-encrypted-key "$MINA_PRIVKEY_PASS" --file /root/.mina/producer-key
-
       echo "Producer key generated successfully"
+      {{- end }}
       {{- end }}
 
       # List generated keys for verification
       ls -lh /root/.mina/
+      {{- if .node.values.daemon.persistence.enable }}
+      ls -lh /data/keys/
+      {{- end }}
   volumeMounts:
+  {{- if .node.values.daemon.persistence.enable }}
+  - name: config-dir
+    mountPath: /data
+  {{- else }}
   - name: mina-keys
     mountPath: /root/.mina
+  {{- end }}
   {{- if .node.values.daemon.init.producerKey.fromSecret }}
   - name: producer-key-secret
     mountPath: /producer-key-secret
@@ -666,8 +711,11 @@ extraPorts:
 {{- define "mina-standard-node.minarustbp.volumes" -}}
 {{- if .node.values.daemon.init.enable }}
 {{- if .node.values.daemon.init.producerKey.generate }}
+{{- if not .node.values.daemon.persistence.enable }}
+{{/* Only use emptyDir for keys when persistence is disabled */}}
 - name: mina-keys
   emptyDir: {}
+{{- end }}
 {{- if .node.values.daemon.init.producerKey.fromSecret }}
 - name: producer-key-secret
   secret:
@@ -679,7 +727,7 @@ extraPorts:
 {{- end }}
 {{- end }}
 {{- end }}
-{{/* Configuration directory */}}
+{{/* Configuration directory - PVC or emptyDir */}}
 - name: config-dir
 {{- if .node.values.daemon.persistence.enable }}
   persistentVolumeClaim:
@@ -702,6 +750,15 @@ extraPorts:
   "mina-standard-node.minarustbp.volumeMounts": Custom volume mounts for minarustbp role
 */}}
 {{- define "mina-standard-node.minarustbp.volumeMounts" -}}
+{{- if .node.values.daemon.persistence.enable }}
+{{/* With persistence: mount PVC at /data for keys access */}}
+- mountPath: /data
+  name: config-dir
+- mountPath: /root/.mina-config/
+  name: config-dir
+  subPath: config
+{{- else }}
+{{/* Without persistence: separate mounts for keys and config */}}
 {{- if .node.values.daemon.init.enable }}
 {{- if .node.values.daemon.init.producerKey.generate }}
 - mountPath: /root/.mina
@@ -710,6 +767,7 @@ extraPorts:
 {{- end }}
 - mountPath: /root/.mina-config/
   name: config-dir
+{{- end }}
 {{- with .root.Values.common.daemon.volumeMounts }}
 {{ toYaml . }}
 {{- end }}
