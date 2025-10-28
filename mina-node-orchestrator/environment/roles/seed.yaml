@@ -1,0 +1,97 @@
+needs: [] # Other Release name
+templates: # required. Template for Release
+  - templates/plain.yaml.gotmpl
+  - templates/seed.yaml.gotmpl
+values: # Default environment values, used in templates only
+  secrets: []
+  debug: false
+  ingress:
+    enable: false
+  extraIngress: {}
+  extraServices: {}
+  extraVolumes: {}
+  extraInitContainers: []
+  daemon:
+    ports: # required
+      external:
+        name: external-port
+        protocol: TCP
+        containerPort: 10006
+        hostPort: 10006
+      client:
+        name: client-port
+        protocol: TCP
+        containerPort: 8301
+      graphql:
+        name: graphql-port
+        protocol: TCP
+        containerPort: 3085
+      metrics:
+        name: metrics-port
+        protocol: TCP
+        containerPort: 8081
+    env: {}
+    envFromSecret: []
+    extraArgs: []
+    image: {}
+    command: []
+    args: []
+    peerListUrl: ""
+    service:
+      type: "ClusterIP"
+      annotations: {}
+    livenessProbe: {}
+    readinessProbe: {}
+    extraContainers: []
+    extraVolumeMounts: []
+    replicas: ""
+    init: # required if .enable: true
+      enable: true
+      libp2pKeys:
+        skip: false
+        password: ""
+        fromSecret: false
+        secret:
+          name: mina-libp2p-keys
+      genesis: # fetch genesis ledger
+        skip: false
+        fromSecret: false
+        secret:
+          name: a-secret
+          key: genesis-config.json
+        fromValue: false
+        value:
+          filename: a-genesis-config.json
+          data: "{}"
+      keys:
+        password: ""
+        fromSecret: false
+        secret:
+          name: mina-keys
+    persistence:
+      enable: false
+      annotations: {}
+      claim:
+        storageClassName: openebs-hostpath
+        size: 10Gi
+    resources:
+      requests:
+        cpu: "6"
+        memory: 10Gi
+      limits:
+        cpu: "8"
+        memory: 12Gi
+  tolerations: []
+  # - effect: NoSchedule
+  #   key: node-role.minaprotocol.org/itn-testbed
+  #   operator: Equal
+  #   value: "true"
+  affinity: {}
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: node-role.minaprotocol.org
+  #           operator: In
+  #           values:
+  #           - itn-testbed

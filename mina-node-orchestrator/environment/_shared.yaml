@@ -1,0 +1,55 @@
+## Global configuration
+global:
+  namespace: mina
+  network: devnet
+## Common values
+## These are values shared among Nodes,
+## they can be overwritten at node level below, or with more 
+## base values at helmfile level.
+common:
+  tolerations: []
+  # - effect: NoSchedule
+  #   key: node-role.minaprotocol.org/itn-testbed
+  #   operator: Equal
+  #   value: "true"
+  affinity: {}
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: node-role.minaprotocol.org
+  #           operator: In
+  #           values:
+  #           - itn-testbed
+  daemon:
+    image:
+      repository: minaprotocol/mina-daemon
+      pullPolicy: IfNotPresent
+      tag: 3.0.4-alpha2-b8cdab0-bullseye-devnet
+    peerListUrl: ""
+    volumeMounts: []
+    env:
+      MINA_CLIENT_TRUSTLIST: '10.0.0.0/8'
+    # envFromSecret:
+    #   - name:
+    #     secretKeyRef:
+    #       name: mina-secrets
+    #       key: mina-secrets.json
+    envFromSecret: []
+    init:
+      libp2pKeys:
+        password: ""
+    ports: {}
+    # Default empty values for conditional fields
+    service:
+      type: "ClusterIP"
+      annotations: {}
+      enable: ""
+    command: []
+    args: []
+    extraContainers: []
+    extraVolumeMounts: []
+    livenessProbe: {}
+    readinessProbe: {}
+    replicas: ""
+  volumes: []

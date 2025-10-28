@@ -1,0 +1,69 @@
+needs: [] # Other Release name
+templates: # required. Template for Release
+  - templates/rosetta.yaml.gotmpl
+values: # Default environment values, used in templates only
+  secrets: []
+  debug: false
+  ingress:
+    enable: false
+  extraInitContainers: [] # optional. Extra init containers to add to the pod
+  ## Rosetta Node configuration
+  daemon:
+    image:
+      repository: minaprotocol/mina-rosetta
+      pullPolicy: IfNotPresent
+      tag: latest
+    init:
+      enable: false
+    ports: # required
+      rosetta:
+        name: rosetta-port
+        protocol: TCP
+        containerPort: 3087
+    command: ["/bin/bash", "-c"]
+    args:
+      - |
+        set -euo pipefail
+        /etc/mina/rosetta/scripts/docker-standalone-start.sh --help
+    env: {}
+    envFromSecret: []
+    # - name: MY_ENV
+    #   secretKeyRef:
+    #     name: mina-secrets
+    #     key: mina-secrets.json
+    ## Additional arguments for the daemon command. Daemon-level
+    ## over-writes this list, and all list.
+    extraArgs: []
+    volumeMounts: []
+    # Persistence: in Rosetta, it will only create the PVC.
+    # You need to create the Volume and VolumeMount yourself.
+    persistence: # optional. Persistent volume configuration
+      enable: false
+      annotations: {}
+      claim:
+        storageClassName: openebs-hostpath
+        size: 10Gi
+    resources:
+      requests:
+        cpu: "2"
+        memory: 4Gi
+      limits:
+        cpu: "4"
+        memory: 6Gi
+    readinessProbe: null
+    livenessProbe: null
+  volumes: []
+  tolerations: []
+  # - effect: NoSchedule
+  #   key: node-role.minaprotocol.org/itn-testbed
+  #   operator: Equal
+  #   value: "true"
+  affinity: {}
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: node-role.minaprotocol.org
+  #           operator: In
+  #           values:
+  #           - itn-testbed

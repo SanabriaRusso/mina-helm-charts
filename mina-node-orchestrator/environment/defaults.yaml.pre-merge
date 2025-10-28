@@ -1,41 +1,27 @@
----
-## ====================================================================
-## GENERATED FILE - DO NOT EDIT DIRECTLY
-## ====================================================================
-## This file is auto-generated from:
-##   - environment/_shared.yaml (global & common config)
-##   - environment/roles/*.yaml (per-role defaults)
-##   - environment/_nodes.yaml (example node instances)
-##
-## To modify:
-##   1. Edit files in environment/roles/
-##   2. Run: scripts/merge-roles.sh
-##   3. Commit both role files and regenerated defaults.yaml
-## ====================================================================
-
 ## Global configuration
 global:
   namespace: mina
   network: devnet
+
 ## Common values
 ## These are values shared among Nodes,
 ## they can be overwritten at node level below, or with more 
 ## base values at helmfile level.
 common:
   tolerations: []
-  # - effect: NoSchedule
-  #   key: node-role.minaprotocol.org/itn-testbed
-  #   operator: Equal
-  #   value: "true"
+    # - effect: NoSchedule
+    #   key: node-role.minaprotocol.org/itn-testbed
+    #   operator: Equal
+    #   value: "true"
   affinity: {}
-  # nodeAffinity:
-  #   requiredDuringSchedulingIgnoredDuringExecution:
-  #     nodeSelectorTerms:
-  #       - matchExpressions:
-  #         - key: node-role.minaprotocol.org
-  #           operator: In
-  #           values:
-  #           - itn-testbed
+    # nodeAffinity:
+    #   requiredDuringSchedulingIgnoredDuringExecution:
+    #     nodeSelectorTerms:
+    #       - matchExpressions:
+    #         - key: node-role.minaprotocol.org
+    #           operator: In
+    #           values:
+    #           - itn-testbed
   daemon:
     image:
       repository: minaprotocol/mina-daemon
@@ -69,7 +55,7 @@ common:
     replicas: ""
   volumes: []
 
-## Role-specific defaults
+## Default Configuration for Nodes
 defaults:
   plain:
     needs: [] # Other Release name
@@ -109,11 +95,11 @@ defaults:
       #   #             number: 3085 # optional. Defaults to external-port
       ## Init containers configuration
       extraInitContainers: [] # optional. Extra init containers to add to the pod
-      # - name: mina-extra
-      #   image:
-      #     repository: mina-extra
-      #     pullPolicy: IfNotPresent
-      #     tag: ""
+        # - name: mina-extra
+        #   image:
+        #     repository: mina-extra
+        #     pullPolicy: IfNotPresent
+        #     tag: ""
       ## Extra ingress configuration
       extraIngress: {}
       ## Extra services configuration
@@ -135,7 +121,7 @@ defaults:
             protocol: TCP
             containerPort: 10005
             hostPort: 10005
-          client:
+          client: 
             name: client-port
             protocol: TCP
             containerPort: 8301
@@ -223,19 +209,19 @@ defaults:
             cpu: "8"
             memory: 12Gi
       tolerations: []
-      # - effect: NoSchedule
-      #   key: node-role.minaprotocol.org/itn-testbed
-      #   operator: Equal
-      #   value: "true"
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
       affinity: {}
-      # nodeAffinity:
-      #   requiredDuringSchedulingIgnoredDuringExecution:
-      #     nodeSelectorTerms:
-      #       - matchExpressions:
-      #         - key: node-role.minaprotocol.org
-      #           operator: In
-      #           values:
-      #           - itn-testbed
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed
   blockProducer:
     needs: [] # Other Release name
     templates: # required. Template for Release
@@ -343,7 +329,7 @@ defaults:
             protocol: TCP
             containerPort: 10005
             hostPort: 10005
-          client:
+          client: 
             name: client-port
             protocol: TCP
             containerPort: 8301
@@ -411,19 +397,19 @@ defaults:
             cpu: "8"
             memory: 12Gi
       tolerations: []
-      # - effect: NoSchedule
-      #   key: node-role.minaprotocol.org/itn-testbed
-      #   operator: Equal
-      #   value: "true"
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
       affinity: {}
-      # nodeAffinity:
-      #   requiredDuringSchedulingIgnoredDuringExecution:
-      #     nodeSelectorTerms:
-      #       - matchExpressions:
-      #         - key: node-role.minaprotocol.org
-      #           operator: In
-      #           values:
-      #           - itn-testbed  
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed  
   snarkWorker:
     needs: [] # Other Release name
     templates: # required. Template for Release
@@ -469,7 +455,7 @@ defaults:
           metrics:
             name: metrics-port
             protocol: TCP
-            containerPort: 8081
+            containerPort: 8081            
         resources:
           requests:
             cpu: "4"
@@ -542,7 +528,7 @@ defaults:
             name: archive-port
             protocol: TCP
             containerPort: 3086
-          client:
+          client: 
             name: postgres-port
             protocol: TCP
             containerPort: 5432
@@ -551,9 +537,9 @@ defaults:
             protocol: TCP
             containerPort: 10002
         env:
-          DAEMON_METRICS_PORT: 10002
-          ARCHIVE_PORT: 3086
-          POSTGRES_PORT: 5432
+         DAEMON_METRICS_PORT: 10002
+         ARCHIVE_PORT: 3086
+         POSTGRES_PORT: 5432
         envFromSecret: []
         args:
           - mina-archive
@@ -563,7 +549,7 @@ defaults:
           - -server-port
           - $(ARCHIVE_PORT)
           - -postgres-uri
-          - postgresql://mina:password@archive-postgresql:5432/archive
+          - postgresql://mina:password@archive-postgresql:5432/archive          
         peerListUrl: ""
         service:
           type: "ClusterIP"
@@ -615,19 +601,19 @@ defaults:
             cpu: "6"
             memory: 10Gi
       tolerations: []
-      # - effect: NoSchedule
-      #   key: node-role.minaprotocol.org/itn-testbed
-      #   operator: Equal
-      #   value: "true"
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
       affinity: {}
-      # nodeAffinity:
-      #   requiredDuringSchedulingIgnoredDuringExecution:
-      #     nodeSelectorTerms:
-      #       - matchExpressions:
-      #         - key: node-role.minaprotocol.org
-      #           operator: In
-      #           values:
-      #           - itn-testbed
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed
   seed:
     needs: [] # Other Release name
     templates: # required. Template for Release
@@ -649,7 +635,7 @@ defaults:
             protocol: TCP
             containerPort: 10006
             hostPort: 10006
-          client:
+          client: 
             name: client-port
             protocol: TCP
             containerPort: 8301
@@ -713,19 +699,20 @@ defaults:
             cpu: "8"
             memory: 12Gi
       tolerations: []
-      # - effect: NoSchedule
-      #   key: node-role.minaprotocol.org/itn-testbed
-      #   operator: Equal
-      #   value: "true"
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
       affinity: {}
-      # nodeAffinity:
-      #   requiredDuringSchedulingIgnoredDuringExecution:
-      #     nodeSelectorTerms:
-      #       - matchExpressions:
-      #         - key: node-role.minaprotocol.org
-      #           operator: In
-      #           values:
-      #           - itn-testbed
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed
+
   minarustplain:
     needs: [] # Other Release name
     templates: # required. Template for Release
@@ -765,11 +752,11 @@ defaults:
       #   #             number: 3085 # optional. Defaults to external-port
       ## Init containers configuration
       extraInitContainers: [] # optional. Extra init containers to add to the pod
-      # - name: mina-extra
-      #   image:
-      #     repository: mina-extra
-      #     pullPolicy: IfNotPresent
-      #     tag: ""
+        # - name: mina-extra
+        #   image:
+        #     repository: mina-extra
+        #     pullPolicy: IfNotPresent
+        #     tag: ""
       ## Extra ingress configuration
       extraIngress: {}
       ## Extra services configuration
@@ -849,156 +836,19 @@ defaults:
             cpu: "8"
             memory: 12Gi
       tolerations: []
-      # - effect: NoSchedule
-      #   key: node-role.minaprotocol.org/itn-testbed
-      #   operator: Equal
-      #   value: "true"
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
       affinity: {}
-      # nodeAffinity:
-      #   requiredDuringSchedulingIgnoredDuringExecution:
-      #     nodeSelectorTerms:
-      #       - matchExpressions:
-      #         - key: node-role.minaprotocol.org
-      #           operator: In
-      #           values:
-      #           - itn-testbed
-  minarustseed:
-    needs: [] # Other Release name
-    templates: # required. Template for Release
-      - templates/plain.yaml.gotmpl
-      - templates/minarustplain.yaml.gotmpl
-      - templates/minarustseed.yaml.gotmpl
-    values: # Default environment values, used in templates only
-      ## Secrets to be created in the namespace
-      ## These are used in the templates to create secrets
-      secrets: []
-      # secretsAnnotations:
-      #   app.o1labs.org/baseline-chart: mina-standard-daemon
-      # secrets: []
-      #   # - name: test
-      #   #   labels:
-      #   #     mylabel: label
-      #   #   data:
-      #   #     key: value
-      ## Debug mode
-      ## If this is set to true, then no automatic args are injected.
-      ## This is useful for debugging, but not recommended for production
-      debug: false
-      ## Ingress configuration
-      ## This is used to create an Ingress resource for the daemon
-      ## It defaults to external port. Usually, this is used for graphql-port
-      ingress:
-        enable: false
-      #   # annotations: {}
-      #   # ingressClassName: nginx
-      #   # hosts:
-      #   #   - host: mina-standard-plain.gcp.o1test.net
-      #   #     paths:
-      #   #       - path: /
-      #   #         service:
-      #   #           name: standard-plain # optional. Defaults to Release name
-      #   #           port:
-      #   #             name: graphql-port # optional. Defaults to external-port
-      #   #             number: 3085 # optional. Defaults to external-port
-      ## Init containers configuration
-      extraInitContainers: [] # optional. Extra init containers to add to the pod
-      # - name: mina-extra
-      #   image:
-      #     repository: mina-extra
-      #     pullPolicy: IfNotPresent
-      #     tag: ""
-      ## Extra ingress configuration
-      extraIngress: {}
-      ## Extra services configuration
-      extraServices: {}
-      ## Extra volumes configuration
-      extraVolumes: {}
-      daemon:
-        ## Ports configuration includes keys from Kubernetes PodSpec
-        ## Even if in the Kubernetes API these are specified as a list,
-        ## we use a map to allow for easy referencing in templates.
-        ##
-        ## At least one port definition is required.
-        ## The ports below are the bare minimum for Mina nodes,
-        ## and they names do matter; mainly because ENVs are created
-        ## from them, and the default values are used in the templates.
-        ports: # required
-          external:
-            name: external-port
-            protocol: TCP
-            containerPort: 3000
-            hostPort: 3000
-          libp2p:
-            name: libp2p-port
-            protocol: TCP
-            containerPort: 8302
-        ## Required Environment variables for the daemon
-        ## NOTE: as with ports, these are specified as a map for easy reference in templates.
-        env: {}
-        ## Additional envs from secrets
-        ## These are used to create environment variables from existing secrets
-        envFromSecret: []
-        # - name: MY_ENV
-        #   secretKeyRef:
-        #     name: mina-secrets
-        #     key: mina-secrets.json
-        ## Additional arguments for the daemon command. Daemon-level
-        ## over-writes this list, and all list.
-        extraArgs: []
-        ## Override daemon image (empty by default)
-        # image: {}
-        ## Override daemon command (empty by default)
-        command: []
-        ## Override daemon args (empty by default)
-        args: []
-        ## Override peer list URL (empty by default)
-        peerListUrl: "https://bootnodes.minaprotocol.com/networks/devnet.txt"
-        ## Service configuration (empty by default)
-        service:
-          type: "ClusterIP"
-          annotations: {}
-        ## Probe configurations (empty by default)
-        livenessProbe: {}
-        readinessProbe: {}
-        ## Volume mounts (empty by default)
-        volumeMounts: []
-        extraVolumeMounts: []
-        ## Extra containers and volume mounts (empty by default)
-        extraContainers: []
-        ## Replica count (empty by default)
-        replicas: ""
-        ## Additional init configuration for the daemon
-        init: # required if .enable: true
-          enable: false
-        persistence: # optional. Persistent volume configuration
-          enable: false
-          annotations: {}
-          claim:
-            storageClassName: openebs-hostpath
-            size: 10Gi
-        ## Volumes configuration
-        volumes: []
-        resources:
-          requests:
-            cpu: "6"
-            memory: 10Gi
-          limits:
-            cpu: "8"
-            memory: 12Gi
-      tolerations: []
-      # - effect: NoSchedule
-      #   key: node-role.minaprotocol.org/itn-testbed
-      #   operator: Equal
-      #   value: "true"
-      affinity: {}
-      # nodeAffinity:
-      #   requiredDuringSchedulingIgnoredDuringExecution:
-      #     nodeSelectorTerms:
-      #       - matchExpressions:
-      #         - key: node-role.minaprotocol.org
-      #           operator: In
-      #           values:
-      #           - itn-testbed
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed
   minarustdashboard:
     needs: [] # Other Release name
     templates: # required. Template for Release
@@ -1037,11 +887,11 @@ defaults:
       #   #             number: 3085 # optional. Defaults to external-port
       ## Init containers configuration
       extraInitContainers: [] # optional. Extra init containers to add to the pod
-      # - name: mina-extra
-      #   image:
-      #     repository: mina-extra
-      #     pullPolicy: IfNotPresent
-      #     tag: ""
+        # - name: mina-extra
+        #   image:
+        #     repository: mina-extra
+        #     pullPolicy: IfNotPresent
+        #     tag: ""
       ## Extra ingress configuration
       extraIngress: {}
       ## Extra services configuration
@@ -1119,28 +969,37 @@ defaults:
             cpu: "8"
             memory: 12Gi
       tolerations: []
-      # - effect: NoSchedule
-      #   key: node-role.minaprotocol.org/itn-testbed
-      #   operator: Equal
-      #   value: "true"
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
       affinity: {}
-      # nodeAffinity:
-      #   requiredDuringSchedulingIgnoredDuringExecution:
-      #     nodeSelectorTerms:
-      #       - matchExpressions:
-      #         - key: node-role.minaprotocol.org
-      #           operator: In
-      #           values:
-      #           - itn-testbed
-  minarustbp:
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed
+  minarustseed:
     needs: [] # Other Release name
     templates: # required. Template for Release
       - templates/plain.yaml.gotmpl
-      - templates/minarustbp.yaml.gotmpl
+      - templates/minarustplain.yaml.gotmpl
+      - templates/minarustseed.yaml.gotmpl
     values: # Default environment values, used in templates only
       ## Secrets to be created in the namespace
       ## These are used in the templates to create secrets
       secrets: []
+      # secretsAnnotations:
+      #   app.o1labs.org/baseline-chart: mina-standard-daemon
+      # secrets: []
+      #   # - name: test
+      #   #   labels:
+      #   #     mylabel: label
+      #   #   data:
+      #   #     key: value
       ## Debug mode
       ## If this is set to true, then no automatic args are injected.
       ## This is useful for debugging, but not recommended for production
@@ -1150,8 +1009,24 @@ defaults:
       ## It defaults to external port. Usually, this is used for graphql-port
       ingress:
         enable: false
+      #   # annotations: {}
+      #   # ingressClassName: nginx
+      #   # hosts:
+      #   #   - host: mina-standard-plain.gcp.o1test.net
+      #   #     paths:
+      #   #       - path: /
+      #   #         service:
+      #   #           name: standard-plain # optional. Defaults to Release name
+      #   #           port:
+      #   #             name: graphql-port # optional. Defaults to external-port
+      #   #             number: 3085 # optional. Defaults to external-port
       ## Init containers configuration
       extraInitContainers: [] # optional. Extra init containers to add to the pod
+        # - name: mina-extra
+        #   image:
+        #     repository: mina-extra
+        #     pullPolicy: IfNotPresent
+        #     tag: ""
       ## Extra ingress configuration
       extraIngress: {}
       ## Extra services configuration
@@ -1164,7 +1039,9 @@ defaults:
         ## we use a map to allow for easy referencing in templates.
         ##
         ## At least one port definition is required.
-        ## The ports below are the bare minimum for Mina Rust BP nodes.
+        ## The ports below are the bare minimum for Mina nodes,
+        ## and they names do matter; mainly because ENVs are created
+        ## from them, and the default values are used in the templates.
         ports: # required
           external:
             name: external-port
@@ -1177,54 +1054,32 @@ defaults:
             containerPort: 8302
         ## Required Environment variables for the daemon
         ## NOTE: as with ports, these are specified as a map for easy reference in templates.
-        env: {} # Empty - set at deployment time
+        env: {}
         ## Additional envs from secrets
         ## These are used to create environment variables from existing secrets
         envFromSecret: []
+        # - name: MY_ENV
+        #   secretKeyRef:
+        #     name: mina-secrets
+        #     key: mina-secrets.json
         ## Additional arguments for the daemon command. Daemon-level
         ## over-writes this list, and all list.
         extraArgs: []
         ## Override daemon image (empty by default)
-        image: {}
+        # image: {}
         ## Override daemon command (empty by default)
         command: []
         ## Override daemon args (empty by default)
-        args: [] # Will be customized per instance
+        args: []
         ## Override peer list URL (empty by default)
-        peerListUrl: "" # BP uses --peers argument directly
+        peerListUrl: "https://bootnodes.minaprotocol.com/networks/devnet.txt"
         ## Service configuration (empty by default)
         service:
           type: "ClusterIP"
           annotations: {}
-        ## Probe configurations
-        livenessProbe:
-          exec:
-            command:
-              - sh
-              - -c
-              - echo "I'm alive"
-          initialDelaySeconds: 30
-          periodSeconds: 10
-          timeoutSeconds: 5
-          failureThreshold: 3
-        readinessProbe:
-          failureThreshold: 10
-          periodSeconds: 60
-          initialDelaySeconds: 200
-          timeoutSeconds: 5
-          exec:
-            command:
-              - sh
-              - -c
-              - |
-                RESPONSE=$(curl -s -X POST http://localhost:3000/graphql -H "Content-Type: application/json" -d '{"query": "{ syncStatus }"}')
-                STATUS=$(echo "$RESPONSE" | jq -r '.data.syncStatus')
-                if [ "$STATUS" = "SYNCED" ]; then
-                  exit 0
-                else
-                  echo "Readiness probe failed: syncStatus is $STATUS"
-                  exit 1
-                fi
+        ## Probe configurations (empty by default)
+        livenessProbe: {}
+        readinessProbe: {}
         ## Volume mounts (empty by default)
         volumeMounts: []
         extraVolumeMounts: []
@@ -1233,38 +1088,8 @@ defaults:
         ## Replica count (empty by default)
         replicas: ""
         ## Additional init configuration for the daemon
-        ## This includes producer key generation
         init: # required if .enable: true
-          enable: true # Enable init for producer key generation
-          producerKey:
-            generate: true # Generate producer key in init container
-            password: "" # MINA_PRIVKEY_PASS - set at deployment time
-            fromSecret: false
-            secret:
-              name: mina-producer-key
-              key: key
-          # Standard init fields (required by plain.yaml.gotmpl but not used for BP)
-          libp2pKeys:
-            skip: true # BP doesn't need libp2p key generation
-            password: ""
-            fromSecret: false
-            secret:
-              name: mina-libp2p-keys
-          genesis:
-            skip: true # BP doesn't need genesis config
-            fromSecret: false
-            secret:
-              name: a-secret
-              key: genesis-config.json
-            fromValue: false
-            value:
-              filename: a-genesis-config.json
-              data: "{}"
-          keys:
-            password: ""
-            fromSecret: false
-            secret:
-              name: mina-keys
+          enable: false
         persistence: # optional. Persistent volume configuration
           enable: false
           annotations: {}
@@ -1275,13 +1100,25 @@ defaults:
         volumes: []
         resources:
           requests:
-            cpu: "2"
-            memory: 3Gi
+            cpu: "6"
+            memory: 10Gi
           limits:
-            cpu: "3"
-            memory: 4Gi
+            cpu: "8"
+            memory: 12Gi
       tolerations: []
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
       affinity: {}
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed
   rosetta:
     needs: [] # Other Release name
     templates: # required. Template for Release
@@ -1339,65 +1176,217 @@ defaults:
         livenessProbe: null
       volumes: []
       tolerations: []
-      # - effect: NoSchedule
-      #   key: node-role.minaprotocol.org/itn-testbed
-      #   operator: Equal
-      #   value: "true"
+        # - effect: NoSchedule
+        #   key: node-role.minaprotocol.org/itn-testbed
+        #   operator: Equal
+        #   value: "true"
       affinity: {}
-      # nodeAffinity:
-      #   requiredDuringSchedulingIgnoredDuringExecution:
-      #     nodeSelectorTerms:
-      #       - matchExpressions:
-      #         - key: node-role.minaprotocol.org
-      #           operator: In
-      #           values:
-      #           - itn-testbed
+        # nodeAffinity:
+        #   requiredDuringSchedulingIgnoredDuringExecution:
+        #     nodeSelectorTerms:
+        #       - matchExpressions:
+        #         - key: node-role.minaprotocol.org
+        #           operator: In
+        #           values:
+        #           - itn-testbed
+  minarustbp:
+    needs: [] # Other Release name
+    templates: # required. Template for Release
+      - templates/plain.yaml.gotmpl
+      - templates/minarustbp.yaml.gotmpl
+    values: # Default environment values, used in templates only
+      ## Secrets to be created in the namespace
+      ## These are used in the templates to create secrets
+      secrets: []
+      ## Debug mode
+      ## If this is set to true, then no automatic args are injected.
+      ## This is useful for debugging, but not recommended for production
+      debug: false
+      ## Ingress configuration
+      ## This is used to create an Ingress resource for the daemon
+      ## It defaults to external port. Usually, this is used for graphql-port
+      ingress:
+        enable: false
+      ## Init containers configuration
+      extraInitContainers: [] # optional. Extra init containers to add to the pod
+      ## Extra ingress configuration
+      extraIngress: {}
+      ## Extra services configuration
+      extraServices: {}
+      ## Extra volumes configuration
+      extraVolumes: {}
+      daemon:
+        ## Ports configuration includes keys from Kubernetes PodSpec
+        ## Even if in the Kubernetes API these are specified as a list,
+        ## we use a map to allow for easy referencing in templates.
+        ##
+        ## At least one port definition is required.
+        ## The ports below are the bare minimum for Mina Rust BP nodes.
+        ports: # required
+          external:
+            name: external-port
+            protocol: TCP
+            containerPort: 3000
+            hostPort: 3000
+          libp2p:
+            name: libp2p-port
+            protocol: TCP
+            containerPort: 8302
+        ## Required Environment variables for the daemon
+        ## NOTE: as with ports, these are specified as a map for easy reference in templates.
+        env: {}  # Empty - set at deployment time
+        ## Additional envs from secrets
+        ## These are used to create environment variables from existing secrets
+        envFromSecret: []
+        ## Additional arguments for the daemon command. Daemon-level
+        ## over-writes this list, and all list.
+        extraArgs: []
+        ## Override daemon image (empty by default)
+        image: {}
+        ## Override daemon command (empty by default)
+        command: []
+        ## Override daemon args (empty by default)
+        args: []  # Will be customized per instance
+        ## Override peer list URL (empty by default)
+        peerListUrl: ""  # BP uses --peers argument directly
+        ## Service configuration (empty by default)
+        service:
+          type: "ClusterIP"
+          annotations: {}
+        ## Probe configurations
+        livenessProbe:
+          exec:
+            command:
+              - sh
+              - -c
+              - echo "I'm alive"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          failureThreshold: 10
+          periodSeconds: 60
+          initialDelaySeconds: 200
+          timeoutSeconds: 5
+          exec:
+            command:
+              - sh
+              - -c
+              - |
+                RESPONSE=$(curl -s -X POST http://localhost:3000/graphql -H "Content-Type: application/json" -d '{"query": "{ syncStatus }"}')
+                STATUS=$(echo "$RESPONSE" | jq -r '.data.syncStatus')
+                if [ "$STATUS" = "SYNCED" ]; then
+                  exit 0
+                else
+                  echo "Readiness probe failed: syncStatus is $STATUS"
+                  exit 1
+                fi
+        ## Volume mounts (empty by default)
+        volumeMounts: []
+        extraVolumeMounts: []
+        ## Extra containers and volume mounts (empty by default)
+        extraContainers: []
+        ## Replica count (empty by default)
+        replicas: ""
+        ## Additional init configuration for the daemon
+        ## This includes producer key generation
+        init: # required if .enable: true
+          enable: true  # Enable init for producer key generation
+          producerKey:
+            generate: true  # Generate producer key in init container
+            password: ""    # MINA_PRIVKEY_PASS - set at deployment time
+            fromSecret: false
+            secret:
+              name: mina-producer-key
+              key: key
+          # Standard init fields (required by plain.yaml.gotmpl but not used for BP)
+          libp2pKeys:
+            skip: true  # BP doesn't need libp2p key generation
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-libp2p-keys
+          genesis:
+            skip: true  # BP doesn't need genesis config
+            fromSecret: false
+            secret:
+              name: a-secret
+              key: genesis-config.json
+            fromValue: false
+            value:
+              filename: a-genesis-config.json
+              data: "{}"
+          keys:
+            password: ""
+            fromSecret: false
+            secret:
+              name: mina-keys
+        persistence: # optional. Persistent volume configuration
+          enable: false
+          annotations: {}
+          claim:
+            storageClassName: openebs-hostpath
+            size: 10Gi
+        ## Volumes configuration
+        volumes: []
+        resources:
+          requests:
+            cpu: "2"
+            memory: 3Gi
+          limits:
+            cpu: "3"
+            memory: 4Gi
+      tolerations: []
+      affinity: {}
 
-## Plain Node Default configuration
-plain: # node identifier
-  enable: false # should this be a Release?
-  role: plain # required for Mina Nodes. Determines daemon configuration
-  name: plain-1 # required. Unique Release name
-  values: {} # Environment values for the Release
-  # needs: [] # Other Release name
-  # templates: [] # List of templates to render
-  # - templates/example.yaml.gotmpl
-archive:
-  enable: false
-  role: archive
-  name: archive-1
-  values: {}
-seed:
-  enable: false
-  role: seed
-  name: seed-1
-  values:
-    daemon:
-      init:
-        genesis:
-          skip: false
-          fromSecret: true
-          secret:
-            name: genesis-ledger
-            key: genesis-ledger.json
-          fromValue: false
-          value:
-            filename: a-genesis-config.json
-            data: "{}"
-    secrets: []
-    # - name: genesis-ledger
-    #   data:
-    #     "genesis-ledger.json": |
-    #       {
-    #         "genesis":
-    #         {
-    #           "genesis_state_timestamp": "2025-02-05T18:25:00Z"
-    #         },
-    #         "ledger":
-    #         {
-    #           "add_genesis_winner": false,
-    #           "s3_data_hash": "985e0eb1650464d1f30158a81ba285f95cce967e9ea7fafe72f882b700dc1d65",
-    #           "hash": "jwUXq8BMvXX8J7EAtvMqgu624BPnqooVGzmHxx57ut88Ez7KmCe"
-    #         },
-    #         ...
-    #       }
+## Releases are DAG-deployed, using `needs` to declare dependency
+nodes:
+  ## Plain Node Default configuration
+  plain: # node identifier
+    enable: false # should this be a Release?
+    role: plain # required for Mina Nodes. Determines daemon configuration
+    name: plain-1 # required. Unique Release name
+    values: {} # Environment values for the Release
+    # needs: [] # Other Release name
+    # templates: [] # List of templates to render
+      # - templates/example.yaml.gotmpl
+  archive:
+    enable: false
+    role: archive
+    name: archive-1
+    values: {}
+  seed:
+    enable: false
+    role: seed
+    name: seed-1
+    values:
+      daemon:
+        init:
+          genesis:
+            skip: false
+            fromSecret: true
+            secret:
+              name: genesis-ledger
+              key: genesis-ledger.json
+            fromValue: false
+            value:
+              filename: a-genesis-config.json
+              data: "{}"
+      secrets: []
+        # - name: genesis-ledger
+        #   data:
+        #     "genesis-ledger.json": |
+        #       {
+        #         "genesis":
+        #         {
+        #           "genesis_state_timestamp": "2025-02-05T18:25:00Z"
+        #         },
+        #         "ledger":
+        #         {
+        #           "add_genesis_winner": false,
+        #           "s3_data_hash": "985e0eb1650464d1f30158a81ba285f95cce967e9ea7fafe72f882b700dc1d65",
+        #           "hash": "jwUXq8BMvXX8J7EAtvMqgu624BPnqooVGzmHxx57ut88Ez7KmCe"
+        #         },
+        #         ...
+        #       }

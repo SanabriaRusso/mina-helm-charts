@@ -19,7 +19,12 @@ The project follows a hierarchical template structure:
 ## Key Files and Directories
 
 - `helmfile.yaml.gotmpl`: Main orchestration file that generates helmfile releases for each node type
-- `environment/defaults.yaml`: Default values and node-level API schema (590+ lines of configuration)
+- `environment/defaults.yaml`: **Auto-generated** default values file (1403 lines) - DO NOT EDIT DIRECTLY
+- `environment/roles/*.yaml`: **SOURCE OF TRUTH** - Per-role default configurations (11 files, 54-164 lines each)
+- `environment/_shared.yaml`: Global and common configuration shared across all roles
+- `environment/_nodes.yaml`: Example node instance configurations
+- `scripts/merge-roles.sh`: Regenerates `defaults.yaml` from role files
+- `scripts/validate-refactor.sh`: Validates changes against production deployments
 - `_helpers.tpl`: Helm template helper functions for efficient YAML generation
 - `templates/`: Node-specific template files:
   - `plain.yaml.gotmpl`: Base template for all node types
@@ -55,6 +60,38 @@ Default configuration hierarchy:
 3. `defaults.<role>.*`: Role-specific defaults
 4. `nodes.<identifier>.*`: Instance-specific overrides
 
+### Editing Role Configurations
+
+**IMPORTANT**: Role configurations are now split into separate files for maintainability.
+
+#### Workflow for Editing Existing Roles
+
+```bash
+# 1. Edit the role file directly (SOURCE OF TRUTH)
+vi environment/roles/blockProducer.yaml
+
+# 2. Regenerate the auto-generated defaults.yaml
+./scripts/merge-roles.sh
+
+# 3. Validate changes (tests against production deployments)
+./scripts/validate-refactor.sh
+
+# 4. Commit BOTH the role file AND regenerated defaults.yaml
+git add environment/roles/blockProducer.yaml environment/defaults.yaml
+git commit -m "Update blockProducer: <description of changes>"
+```
+
+#### Why Two Files?
+
+- **`environment/roles/<role>.yaml`**: Small, focused, easy to edit (54-164 lines per role)
+- **`environment/defaults.yaml`**: Auto-generated for backwards compatibility with existing deployments
+
+This approach gives us:
+- ✅ Easy editing (small files, clear boundaries)
+- ✅ Clean git diffs (only changed roles shown)
+- ✅ 100% backwards compatibility (consumers still use single defaults.yaml)
+- ✅ Automated validation (scripts test against 14 production nodes)
+
 ## Dependencies
 
 - Depends on `../mina-daemon-chart` chart
@@ -72,19 +109,39 @@ Default configuration hierarchy:
 
 When adding a new node role (e.g., `minarustbp`):
 
-1. **Update `helmfile.yaml.gotmpl`**: Add role to `$validNodeRoles` list
-2. **Add defaults in `environment/defaults.yaml`**: Create new `defaults.<role>` section with:
+1. **Create role file in `environment/roles/<newRole>.yaml`**:
+   ```bash
+   # Copy existing role as template
+   cp environment/roles/plain.yaml environment/roles/newRole.yaml
+
+   # Edit the new role file
+   vi environment/roles/newRole.yaml
+   ```
+
+   Define:
    - `needs`: Dependencies on other releases
    - `templates`: List of `.gotmpl` files to process (usually `plain.yaml.gotmpl` + role-specific)
    - `values`: Complete default configuration including daemon, init, volumes, resources
-3. **Create helper functions in `_helpers.tpl`**: Add role-specific helpers following pattern:
+
+2. **Update `scripts/merge-roles.sh`**: Add new role to the `ROLES` list
+   ```bash
+   ROLES="plain blockProducer coordinator snarkWorker archive seed minarustplain minarustseed minarustdashboard minarustbp rosetta newRole"
+   ```
+
+3. **Update `helmfile.yaml.gotmpl`**: Add role to `$validNodeRoles` list
+   ```go
+   {{- $validNodeRoles := list "plain" "coordinator" "snarkWorker" "blockProducer" "seed" "archive" "rosetta" "minarustplain" "minarustseed" "minarustdashboard" "minarustbp" "newRole" }}
+   ```
+
+4. **Create helper functions in `_helpers.tpl`**: Add role-specific helpers following pattern:
    - `mina-standard-node.<role>.initContainers`: Custom init container logic
    - `mina-standard-node.<role>.volumes`: Volume definitions
    - `mina-standard-node.<role>.volumeMounts`: Volume mount configuration
    - `mina-standard-node.<role>.ports`: Port configuration
    - `mina-standard-node.<role>.service`: Service configuration
    - `mina-standard-node.<role>.env`: Environment variable merging
-4. **Create template file `templates/<role>.yaml.gotmpl`**: Override sections from `plain.yaml.gotmpl`:
+
+5. **Create template file `templates/<role>.yaml.gotmpl`**: Override sections from `plain.yaml.gotmpl`:
    - `initContainers`: Custom initialization logic
    - `daemon.command` and `daemon.args`: Role-specific startup commands
    - `daemon.env`: Environment variables using helper
@@ -92,6 +149,26 @@ When adding a new node role (e.g., `minarustbp`):
    - `daemon.volumeMounts`: Volume mounts using helper
    - `service`: Service configuration using helper
    - `volumes`: Volumes using helper
+
+6. **Regenerate defaults.yaml and test**:
+   ```bash
+   # Merge role files into defaults.yaml
+   ./scripts/merge-roles.sh
+
+   # Validate changes
+   ./scripts/validate-refactor.sh
+
+   # Test template rendering
+   helmfile template --skip-deps
+   ```
+
+7. **Commit all changes**:
+   ```bash
+   git add environment/roles/newRole.yaml environment/defaults.yaml \
+           scripts/merge-roles.sh helmfile.yaml.gotmpl _helpers.tpl \
+           templates/newRole.yaml.gotmpl
+   git commit -m "Add newRole node type"
+   ```
 
 ### Example: minarustbp Role
 

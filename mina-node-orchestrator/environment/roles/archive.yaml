@@ -1,0 +1,148 @@
+needs: []
+templates:
+  - templates/plain.yaml.gotmpl
+  - templates/postgresql.yaml.gotmpl
+values:
+  secrets: []
+  debug: false
+  extraIngress: {}
+  extraServices: {}
+  extraVolumes: {}
+  extraInitContainers: []
+  ## Postgresql configuration.
+  ## This is not exactly the same schema as Bitnami's, but provides useful keys to e.g.,
+  ## launch pre-defined initContainers used to bootstrap db, password and user settings, etc.
+  ## If you need to check what exact values are sent to the Chart, check the templates/postgresql.yaml.gotmpl
+  postgresql:
+    enable: true
+    primary:
+      affinity:
+      tolerations: []
+    global:
+      postgresql:
+        auth:
+          username: mina
+          password: password
+          database: archive
+          gcpSecret: false # Use GCP secret manager to fetchSecretValue from .password reference
+    ## Primary Sidecars: pre-defined containers that start before the main container
+    ## but continue running alongside it.
+    ## We use them to fetch schema or dump data from a remote location.
+    ## Two types are supported: fromSchema and fromDump.
+    sidecars:
+      type: fromSchema # fromSchema or fromDump
+      fromSchema:
+        url: https://raw.githubusercontent.com/MinaProtocol/mina/refs/heads/georgeee/compatible-with-itn/src/app/archive/create_schema.sql
+      fromDump:
+        url: https://storage.googleapis.com/mina-archive-dumps/devnet-2021-09-01-00-00-00.sql
+    resources:
+      requests:
+        memory: 1Gi
+        cpu: "1"
+      limits:
+        memory: 2Gi
+        cpu: "3"
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "openebs-hostpath"
+      annotations:
+        argocd.argoproj.io/sync-options: Delete=true
+  ingress:
+    enable: false
+  daemon:
+    image:
+      repository: minaprotocol/mina-archive
+      pullPolicy: IfNotPresent
+      tag: 3.0.4-alpha2-b8cdab0-bullseye
+    ports:
+      external:
+        name: archive-port
+        protocol: TCP
+        containerPort: 3086
+      client:
+        name: postgres-port
+        protocol: TCP
+        containerPort: 5432
+      metrics:
+        name: an-metrics-port
+        protocol: TCP
+        containerPort: 10002
+    env:
+      DAEMON_METRICS_PORT: 10002
+      ARCHIVE_PORT: 3086
+      POSTGRES_PORT: 5432
+    envFromSecret: []
+    args:
+      - mina-archive
+      - run
+      - -metrics-port
+      - $(DAEMON_METRICS_PORT)
+      - -server-port
+      - $(ARCHIVE_PORT)
+      - -postgres-uri
+      - postgresql://mina:password@archive-postgresql:5432/archive
+    peerListUrl: ""
+    service:
+      type: "ClusterIP"
+      annotations: {}
+    extraArgs: {}
+    livenessProbe:
+      failureThreshold: 10
+      initialDelaySeconds: 10
+      periodSeconds: 60
+      successThreshold: 1
+      terminationGracePeriodSeconds: 10
+      tcpSocket:
+        port: archive-port
+      timeoutSeconds: 5
+    init: # required if .enable: true
+      enable: false
+      libp2pKeys:
+        skip: false
+        password: ""
+        fromSecret: false
+        secret:
+          name: mina-libp2p-keys
+      genesis: # fetch genesis ledger
+        skip: false
+        fromSecret: false
+        secret:
+          name: a-secret
+          key: genesis-config.json
+        fromValue: false
+        value:
+          filename: a-genesis-config.json
+          data: "{}"
+      keys:
+        password: ""
+        fromSecret: false
+        secret:
+          name: mina-keys
+    persistence:
+      enable: false
+      annotations: {}
+      claim:
+        storageClassName: openebs-hostpath
+        size: 10Gi
+    resources:
+      requests:
+        cpu: "4"
+        memory: 8Gi
+      limits:
+        cpu: "6"
+        memory: 10Gi
+  tolerations: []
+  # - effect: NoSchedule
+  #   key: node-role.minaprotocol.org/itn-testbed
+  #   operator: Equal
+  #   value: "true"
+  affinity: {}
+  # nodeAffinity:
+  #   requiredDuringSchedulingIgnoredDuringExecution:
+  #     nodeSelectorTerms:
+  #       - matchExpressions:
+  #         - key: node-role.minaprotocol.org
+  #           operator: In
+  #           values:
+  #           - itn-testbed

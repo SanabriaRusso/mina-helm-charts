@@ -1,0 +1,48 @@
+## Plain Node Default configuration
+plain: # node identifier
+  enable: false # should this be a Release?
+  role: plain # required for Mina Nodes. Determines daemon configuration
+  name: plain-1 # required. Unique Release name
+  values: {} # Environment values for the Release
+  # needs: [] # Other Release name
+  # templates: [] # List of templates to render
+  # - templates/example.yaml.gotmpl
+archive:
+  enable: false
+  role: archive
+  name: archive-1
+  values: {}
+seed:
+  enable: false
+  role: seed
+  name: seed-1
+  values:
+    daemon:
+      init:
+        genesis:
+          skip: false
+          fromSecret: true
+          secret:
+            name: genesis-ledger
+            key: genesis-ledger.json
+          fromValue: false
+          value:
+            filename: a-genesis-config.json
+            data: "{}"
+    secrets: []
+    # - name: genesis-ledger
+    #   data:
+    #     "genesis-ledger.json": |
+    #       {
+    #         "genesis":
+    #         {
+    #           "genesis_state_timestamp": "2025-02-05T18:25:00Z"
+    #         },
+    #         "ledger":
+    #         {
+    #           "add_genesis_winner": false,
+    #           "s3_data_hash": "985e0eb1650464d1f30158a81ba285f95cce967e9ea7fafe72f882b700dc1d65",
+    #           "hash": "jwUXq8BMvXX8J7EAtvMqgu624BPnqooVGzmHxx57ut88Ez7KmCe"
+    #         },
+    #         ...
+    #       }
