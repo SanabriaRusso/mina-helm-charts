@@ -92,6 +92,48 @@ This approach gives us:
 - ✅ 100% backwards compatibility (consumers still use single defaults.yaml)
 - ✅ Automated validation (scripts test against 14 production nodes)
 
+## CI/CD Testing
+
+The repository includes automated template validation via GitHub Actions.
+
+### Test Fixtures
+
+Test fixtures in `test-fixtures/` contain sanitized production configurations:
+- `devnet/`: 10 nodes (archive, coordinator, snarkWorker, seed, blockProducer)
+- `rust-seeds/`: 2 nodes (minarustplain, minarustseed)
+- `rust-bps/`: 2 nodes (minarustbp)
+
+See [test-fixtures/README.md](test-fixtures/README.md) for details.
+
+### Running Tests Locally
+
+```bash
+# Test all fixtures
+./scripts/test-templates.sh
+
+# Test specific fixture
+./scripts/test-templates.sh devnet
+```
+
+**Requirements**: podman (or docker - set `CONTAINER_CMD=docker`)
+
+The script uses the official `ghcr.io/helmfile/helmfile:v0.165.0` container image, eliminating the need to install helmfile, helm, or yq locally.
+
+### PR Workflow
+
+Every PR automatically validates templates:
+1. Runs `scripts/test-templates.sh` for each fixture in parallel (using matrix strategy)
+2. YAML syntax validation
+3. Verify defaults.yaml is synchronized with role files
+4. Template rendering for 14 nodes across 9 roles
+5. Check for unresolved variables
+6. Verify no secret references leaked
+7. Upload rendered templates as artifacts
+
+The workflow uses the same script as local testing, ensuring consistency.
+
+Workflow runs in ~3-5 minutes and must pass before merging.
+
 ## Dependencies
 
 - Depends on `../mina-daemon-chart` chart

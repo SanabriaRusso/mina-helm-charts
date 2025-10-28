@@ -1,0 +1,45 @@
+# Rust block producers test fixture
+# Contains 2 nodes covering minarustbp role
+global:
+  network: mainnet
+
+common:
+  daemon:
+    image:
+      repository: vladsimplestakingcom/mina-bp-stats-sidecar
+      tag: 2.0.0rampup4-55b7818-focal
+
+nodes:
+  minaRustBp1:
+    enable: true
+    role: minarustbp
+    name: mina-rust-bp-1
+    values:
+      daemon:
+        image:
+          repository: vladsimplestakingcom/mina-bp-stats-sidecar
+          tag: 2.0.0rampup4-55b7818-focal
+        env:
+          MINA_PRIVKEY_PASS: "test-password"
+        init:
+          enable: true
+          producerKey:
+            generate: true
+            password: "test-password"
+
+  minaRustBp2:
+    enable: true
+    role: minarustbp
+    name: mina-rust-bp-2
+    values:
+      daemon:
+        image:
+          repository: vladsimplestakingcom/mina-bp-stats-sidecar
+          tag: 2.0.0rampup4-55b7818-focal
+        env:
+          MINA_PRIVKEY_PASS: "test-password"
+        init:
+          enable: true
+          producerKey:
+            generate: true
+            password: "test-password"

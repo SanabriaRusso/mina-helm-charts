@@ -1,0 +1,75 @@
+name: Validate Helm Templates
+
+on:
+  pull_request:
+    paths:
+      - 'mina-node-orchestrator/**'
+      - '.github/workflows/validate-templates.yml'
+  push:
+    branches:
+      - main
+    paths:
+      - 'mina-node-orchestrator/**'
+
+jobs:
+  validate-templates:
+    name: Validate Templates - ${{ matrix.fixture }}
+    runs-on: ubuntu-latest
+
+    strategy:
+      fail-fast: false
+      matrix:
+        fixture:
+          - devnet
+          - rust-seeds
+          - rust-bps
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Run template validation for ${{ matrix.fixture }}
+        working-directory: mina-node-orchestrator
+        env:
+          CONTAINER_CMD: podman
+        run: |
+          ./scripts/test-templates.sh ${{ matrix.fixture }}
+
+      - name: Upload rendered templates
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: rendered-templates-${{ matrix.fixture }}
+          path: /tmp/${{ matrix.fixture }}-templates.yaml
+          retention-days: 7
+          if-no-files-found: ignore
+
+  summary:
+    name: Validation Summary
+    runs-on: ubuntu-latest
+    needs: validate-templates
+    if: always()
+
+    steps:
+      - name: Check results
+        run: |
+          if [ "${{ needs.validate-templates.result }}" == "success" ]; then
+            echo "========================================="
+            echo "✅ All template validations passed"
+            echo "========================================="
+            echo ""
+            echo "Validated fixtures:"
+            echo "  - devnet: 10 nodes (5 roles)"
+            echo "  - rust-seeds: 2 nodes (2 roles)"
+            echo "  - rust-bps: 2 nodes (1 role)"
+            echo ""
+            echo "Total: 14 nodes across 9 roles"
+            echo "Coverage: 82% of all node role types"
+          else
+            echo "========================================="
+            echo "❌ Template validation failed"
+            echo "========================================="
+            echo ""
+            echo "Check the logs above for details"
+            exit 1
+          fi

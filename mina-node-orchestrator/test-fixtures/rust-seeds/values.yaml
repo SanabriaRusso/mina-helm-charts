@@ -1,0 +1,49 @@
+# Rust seeds test fixture
+# Contains 2 nodes covering 2 mina-rust roles
+global:
+  network: mainnet
+
+common:
+  daemon:
+    image:
+      repository: vladsimplestakingcom/mina-bp-stats-sidecar
+      tag: 2.0.0rampup4-55b7818-focal
+
+nodes:
+  minaRustPlain1:
+    enable: true
+    role: minarustplain
+    name: mina-rust-plain-1
+    values:
+      daemon:
+        image:
+          repository: vladsimplestakingcom/mina-bp-stats-sidecar
+          tag: 2.0.0rampup4-55b7818-focal
+        ports:
+          external:
+            containerPort: 3000
+            hostPort: 3000
+          libp2p:
+            containerPort: 8302
+        service:
+          type: ClusterIP
+
+  minaRustSeed1:
+    enable: true
+    role: minarustseed
+    name: mina-rust-seed-seed-1
+    values:
+      daemon:
+        image:
+          repository: vladsimplestakingcom/mina-bp-stats-sidecar
+          tag: 2.0.0rampup4-55b7818-focal
+        ports:
+          external:
+            containerPort: 3080
+            hostPort: 3080
+          libp2p:
+            containerPort: 8302
+        service:
+          type: LoadBalancer
+          annotations:
+            external-dns.alpha.kubernetes.io/hostname: mina-rust-seed-1.example.com
