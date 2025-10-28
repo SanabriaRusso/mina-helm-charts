@@ -112,7 +112,10 @@ if [ -f scripts/merge-roles.sh ] && [ "${SKIP_DEFAULTS_CHECK:-}" != "true" ]; th
   cp environment/defaults.yaml /tmp/defaults.yaml.backup
 
   echo "Regenerating defaults.yaml from role files..."
-  if run_in_container "./scripts/merge-roles.sh" > /dev/null 2>&1; then
+  MERGE_OUTPUT=$(run_in_container "./scripts/merge-roles.sh" 2>&1)
+  MERGE_EXIT=$?
+
+  if [ $MERGE_EXIT -eq 0 ]; then
     # Compare
     if diff -wB /tmp/defaults.yaml.backup environment/defaults.yaml > /dev/null; then
       echo -e "${GREEN}✓ defaults.yaml is synchronized with role files${NC}"
@@ -126,7 +129,12 @@ if [ -f scripts/merge-roles.sh ] && [ "${SKIP_DEFAULTS_CHECK:-}" != "true" ]; th
       exit 1
     fi
   else
-    echo -e "${YELLOW}⚠ merge-roles.sh validation failed, skipping (set SKIP_DEFAULTS_CHECK=true to suppress)${NC}"
+    echo -e "${YELLOW}⚠ merge-roles.sh validation failed, skipping${NC}"
+    echo ""
+    echo "Error output:"
+    echo "$MERGE_OUTPUT" | head -20
+    echo ""
+    echo "Note: Set SKIP_DEFAULTS_CHECK=true to suppress this check"
   fi
   echo ""
 fi
