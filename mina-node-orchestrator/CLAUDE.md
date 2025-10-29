@@ -24,7 +24,6 @@ The project follows a hierarchical template structure:
 - `environment/_shared.yaml`: Global and common configuration shared across all roles
 - `environment/_nodes.yaml`: Example node instance configurations
 - `scripts/merge-roles.sh`: Regenerates `defaults.yaml` from role files
-- `scripts/validate-refactor.sh`: Validates changes against production deployments
 - `_helpers.tpl`: Helm template helper functions for efficient YAML generation
 - `templates/`: Node-specific template files:
   - `plain.yaml.gotmpl`: Base template for all node types
@@ -73,10 +72,7 @@ vi environment/roles/blockProducer.yaml
 # 2. Regenerate the auto-generated defaults.yaml
 ./scripts/merge-roles.sh
 
-# 3. Validate changes (tests against production deployments)
-./scripts/validate-refactor.sh
-
-# 4. Commit BOTH the role file AND regenerated defaults.yaml
+# 3. Commit BOTH the role file AND regenerated defaults.yaml
 git add environment/roles/blockProducer.yaml environment/defaults.yaml
 git commit -m "Update blockProducer: <description of changes>"
 ```
@@ -117,7 +113,7 @@ See [test-fixtures/README.md](test-fixtures/README.md) for details.
 
 **Requirements**: podman (or docker - set `CONTAINER_CMD=docker`)
 
-The script uses the official `ghcr.io/helmfile/helmfile:v0.165.0` container image, eliminating the need to install helmfile, helm, or yq locally.
+The script uses the official `ghcr.io/helmfile/helmfile:v1.1.8` container image as base, eliminating the need to install `helmfile`, `helm`, or `yq` locally. We have packaged an image for this purpose: `asia-northeast3-docker.pkg.dev/o1labs-192920/gitops-images/helmfile:1.1.8`
 
 ### PR Workflow
 
@@ -196,9 +192,6 @@ When adding a new node role (e.g., `minarustbp`):
    ```bash
    # Merge role files into defaults.yaml
    ./scripts/merge-roles.sh
-
-   # Validate changes
-   ./scripts/validate-refactor.sh
 
    # Test template rendering
    helmfile template --skip-deps
