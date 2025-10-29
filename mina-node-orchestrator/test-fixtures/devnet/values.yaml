@@ -1,0 +1,164 @@
+# Simplified devnet test fixture
+# Contains 10 nodes covering 5 roles
+global:
+  network: devnet
+
+common:
+  daemon:
+    peerListUrl: https://bootnodes.minaprotocol.com/networks/devnet.txt
+    image:
+      repository: gcr.io/o1labs-192920/mina-daemon
+      tag: 3.3.0-alpha1-6929a7e-bullseye-devnet
+
+nodes:
+  devnetArchive:
+    enable: true
+    role: archive
+    name: devnet-archive
+    values:
+      postgresql:
+        enable: true
+        global:
+          postgresql:
+            auth:
+              username: mina
+              password: "test-postgres-password"
+              database: archive
+      daemon:
+        image:
+          repository: gcr.io/o1labs-192920/mina-archive
+          tag: 3.3.0-alpha1-6929a7e-bullseye-devnet
+
+  devnetCoordinator:
+    enable: true
+    role: coordinator
+    name: devnet-coordinator
+    values:
+      daemon:
+        extraArgs:
+          - -insecure-rest-server
+        init:
+          enable: true
+          genesis:
+            skip: true
+
+  devnetBackupCoordinator:
+    enable: true
+    role: coordinator
+    name: devnet-backup-coordinator
+    values:
+      daemon:
+        extraArgs:
+          - -insecure-rest-server
+        init:
+          enable: true
+          genesis:
+            skip: true
+
+  devnetSnarkWorker:
+    enable: true
+    role: snarkWorker
+    name: devnet-snark-worker
+    values:
+      daemon:
+        extraArgs:
+          - -daemon-address
+          - devnet-coordinator:8301
+
+  devnetBackupSnarkWorker:
+    enable: true
+    role: snarkWorker
+    name: devnet-backup-snark-worker
+    values:
+      daemon:
+        replicas: 2
+        extraArgs:
+          - -daemon-address
+          - devnet-backup-coordinator:8301
+
+  devnetSeed1:
+    enable: true
+    role: seed
+    name: devnet-standard-seed-1
+    values:
+      daemon:
+        service:
+          type: LoadBalancer
+        init:
+          enable: true
+          genesis:
+            skip: true
+          libp2pKeys:
+            password: naughty blue worm
+
+  devnetSeed2:
+    enable: true
+    role: seed
+    name: devnet-standard-seed-2
+    values:
+      daemon:
+        service:
+          type: LoadBalancer
+        init:
+          enable: true
+          genesis:
+            skip: true
+          libp2pKeys:
+            password: naughty blue worm
+
+  devnetWhale1:
+    enable: true
+    role: blockProducer
+    name: devnet-standard-whale-1
+    values:
+      daemon:
+        service:
+          type: LoadBalancer
+        extraArgs:
+          - -insecure-rest-server
+        init:
+          enable: true
+          genesis:
+            skip: true
+          keys:
+            password: naughty blue worm
+          libp2pKeys:
+            password: naughty blue worm
+
+  devnetWhale2:
+    enable: true
+    role: blockProducer
+    name: devnet-standard-whale-2
+    values:
+      daemon:
+        service:
+          type: LoadBalancer
+        extraArgs:
+          - -insecure-rest-server
+        init:
+          enable: true
+          genesis:
+            skip: true
+          keys:
+            password: naughty blue worm
+          libp2pKeys:
+            password: naughty blue worm
+
+  devnetWhale3:
+    enable: true
+    role: blockProducer
+    name: devnet-standard-whale-3
+    values:
+      daemon:
+        service:
+          type: LoadBalancer
+        extraArgs:
+          - -insecure-rest-server
+        init:
+          enable: true
+          genesis:
+            skip: true
+          keys:
+            password: naughty blue worm
+          libp2pKeys:
+            password: naughty blue worm

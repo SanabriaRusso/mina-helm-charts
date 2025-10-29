@@ -1,0 +1,54 @@
+needs: [] # Other Release name
+templates: # required. Template for Release
+  - templates/plain.yaml.gotmpl
+  - templates/snarkWorker.yaml.gotmpl
+values: # Default environment values, used in templates only
+  secrets: []
+  debug: false
+  ingress:
+    enable: false
+  extraIngress: {}
+  extraServices: {}
+  extraVolumes: {}
+  extraInitContainers: []
+  daemon:
+    env:
+      RAYON_NUM_THREADS: 4
+    envFromSecret: []
+    extraArgs: []
+    image: {}
+    command: []
+    args: []
+    peerListUrl: ""
+    service:
+      type: "ClusterIP"
+      annotations: {}
+    livenessProbe: {}
+    readinessProbe: {}
+    extraContainers: []
+    extraVolumeMounts: []
+    replicas: ""
+    init: # required if .enable: true
+      enable: false
+    # network: global-override # optional. Overrides global.network
+    persistence: # optional. Persistent volume configuration
+      enable: false
+    ports:
+      external:
+        name: external-port
+        protocol: TCP
+        containerPort: 8080
+        hostPort: 8080
+      metrics:
+        name: metrics-port
+        protocol: TCP
+        containerPort: 8081
+    resources:
+      requests:
+        cpu: "4"
+        memory: 6Gi
+      limits:
+        cpu: "16"
+        memory: 16Gi
+  tolerations: []
+  affinity: {}
