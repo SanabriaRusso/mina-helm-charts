@@ -569,15 +569,7 @@ defaults:
           type: "ClusterIP"
           annotations: {}
         extraArgs: {}
-        livenessProbe:
-          failureThreshold: 10
-          initialDelaySeconds: 10
-          periodSeconds: 60
-          successThreshold: 1
-          terminationGracePeriodSeconds: 10
-          tcpSocket:
-            port: archive-port
-          timeoutSeconds: 5
+        livenessProbe: {}
         init: # required if .enable: true
           enable: false
           libp2pKeys:
