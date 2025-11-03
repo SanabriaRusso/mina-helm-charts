@@ -6,6 +6,10 @@
 {{- end }}
 {{- $database := .node.values.postgresql.global.postgresql.auth.database | default "archive" }}
 {{- $pgport := .node.values.daemon.ports.client.containerPort }}
+{{- if hasKey .node.values "deploymentAnnotations" }}
+deploymentAnnotations:
+  {{- toYaml .node.values.deploymentAnnotations | nindent 2 }}
+{{- end }}
 postgresql:
   enable: {{ .node.values.postgresql.enable }}
   # Authentication configuration
