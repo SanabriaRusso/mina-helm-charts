@@ -1,6 +1,10 @@
 {{/*
  Override default values for mina-standard-daemon here
 */}}
+{{- if hasKey .node.values "deploymentAnnotations" }}
+deploymentAnnotations:
+  {{- toYaml .node.values.deploymentAnnotations | nindent 2 }}
+{{- end }}
 service:
   enable: false
 daemon:
